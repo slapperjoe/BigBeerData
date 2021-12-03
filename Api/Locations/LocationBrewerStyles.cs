@@ -40,6 +40,7 @@ namespace Api.Locations
 							[HttpTrigger(AuthorizationLevel.Function, "get", Route = "Location/{id}/{style}/brewers")]
 			HttpRequest req, long id, string style)
 		{
+			_logger.LogDebug("Location Brewer Styles called id: {id}, style: {style}", id, style);
 			
 			var timeCutoff = DateTime.Now.AddDays(-30);
 			var checkinSet = _context.Checkins

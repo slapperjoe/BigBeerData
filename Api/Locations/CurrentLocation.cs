@@ -35,6 +35,7 @@ namespace Api.Locations
 						[HttpTrigger(AuthorizationLevel.Function, "get", Route = "location/current")]
 			HttpRequest req)
 		{
+			_logger.LogDebug("Get Current Location called");
 			var establishments = _context.Locations.Where(l => l.Establishments.Any());
 
 			var result = establishments.Select(s =>

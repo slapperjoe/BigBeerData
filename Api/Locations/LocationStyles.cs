@@ -38,6 +38,8 @@ namespace Api.Locations
 				[HttpTrigger(AuthorizationLevel.Function, "get", Route = "Location/{id}/style")]
 		HttpRequest req, long id)
 		{
+
+			_logger.LogDebug("Location Styles called: id: {id}", id);
 			
 			var resultGroup = new List<LocationStyle>();
 
@@ -45,8 +47,7 @@ namespace Api.Locations
 			var resultSet = await _context.Checkins
 				.Where(a => a.Establishment.LocationId == id && a.CheckinTime >= timeCutoff)
 				.Select(b => new Tuple<Establishment, Beer>(b.Establishment, b.Beer)).ToListAsync();
-			var resultEstab = resultSet
-				.GroupBy(b => b.Item1);
+			var resultEstab = resultSet.GroupBy(b => b.Item1);
 			if (resultEstab.Any())
 			{
 				var countMax = resultEstab.Max(a => a.Count());

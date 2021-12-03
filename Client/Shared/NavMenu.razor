@@ -1,10 +1,45 @@
-﻿<MudNavMenu>
-    <MudNavLink Href="/">Home</MudNavLink>
-    <MudNavLink Href="/FetchData">Fetch</MudNavLink>
-    
-    <MudNavGroup Title="Settings" Expanded="true">
-        <MudNavLink Href="/users">Users</MudNavLink>
-        <MudNavLink Href="/security">Security</MudNavLink>
-    </MudNavGroup>
-    <MudNavLink Href="/about">About</MudNavLink>
+﻿@using System.Net.Http
+@inject HttpClient Http
+@inject BrowserService Service
+
+<MudNavMenu>
+	@if (parent.locations == null)
+	{
+		<span>Loading menu..</span>
+	}
+	else
+	{
+		foreach (var location in parent.locations)
+		{
+			<MudNavLink Class="getStyleString(location.ID)" OnClick="async () =>
+											{
+												parent.loaded = false;
+												parent.selected = location.ID;
+												await parent.UpdateLocation(location.ID);
+												parent.loaded = true;
+											}">
+				@location.Name
+			</MudNavLink>
+		}
+	}
 </MudNavMenu>
+
+@code {
+
+	[Parameter]
+	public MainLayout parent { get; set; }
+
+	private string? getStyleString(int currentId)
+	{
+		if (currentId == parent.selected && !parent.loaded)
+		{
+			return "spinner-border spinner-border-sm";
+		}
+		return null;
+	}
+
+	private string? selected(int currentId)
+	{
+		return (currentId == parent.selected ? "selected" : null);
+	}
+}

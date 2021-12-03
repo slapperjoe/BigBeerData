@@ -2,4 +2,141 @@
 
 <PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
+@using BigBeerData.Shared
+@using System.Net.Http
+@using System.Threading
+@inject HttpClient Http
+@inject BrowserService Service
+
+
+
+<div class="control-section" style="height: 100%;">
+	@if (parent.loaded)
+	{
+		<div id="mapContainer" style="height: @(MainHeight.ToPixel())">
+			<div id="map" style="height: @(MainHeight.ToPixel())"></div>
+			<canvas id="deck-canvas" style="height: @(MainHeight.ToPixel())"></canvas>
+		</div>
+	}
+	else
+	{
+		<div class="loadingDiv">
+			<img style="width: 100px; height: 100px;" class="centreLoader"
+			 src="/img/beerload.svg" />
+		</div>
+	}
+
+</div>
+
+@code {
+
+	[Parameter]
+	public Client.Shared.MainLayout parent { get; set; }
+
+	public LocationStyle[]? locationStyles;
+	public GeoBounds? bounds;
+
+	private double cntrLong = 0;
+	private double cntrLat = 0;
+	private double zoom = 12;
+	private int Height = 0;
+	public int MainHeight { get; set; }
+	public int Width { get; set; }
+	public int WSVGPad { get; set; }
+	public int HSVGPad { get; set; }
+
+	public bool mcpSet = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await GetMainArea();
+		locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>("/api/location/1/style");
+		bounds = await Http.GetFromJsonAsync<GeoBounds>("/api/geo/bounds/1");
+		parent.setLoaded(true);
+	}
+
+
+	public async Task GetMainArea()
+	{
+		var dimension = await Service.GetDimensions();
+		Height = (dimension.Height - 56); //remove header
+		MainHeight = Height - 20;
+		Width = dimension.Width - 170;
+		WSVGPad = Width / 2 - 50;
+		HSVGPad = Height / 2 - 50;
+	}
+
+	public async Task LocationUpdated(int id)
+	{
+		parent.loaded = false;
+		await Task.Run(async () =>
+		{
+			await GetMainArea();
+			locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>($"api/location/{id}/style");
+			bounds = await Http.GetFromJsonAsync<GeoBounds>($"api/geo/bounds/{id}");
+			parent.loaded = true;
+			TileMath.BestMapView(bounds?.ToDoubleArray(), Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
+
+			var dotNetReference = DotNetObjectReference.Create(this);
+
+
+			//await Service.InitDeckGL(bounds.CentreX, bounds.CentreY, ((int)Math.Floor(zoom)) - 1);
+			await Service.FlyTo(bounds?.CentreX ?? cntrLat, bounds?.CentreY ?? cntrLong, ((int)Math.Floor(zoom)) - 1);
+
+			await Service.UpdateStyles(locationStyles ?? new LocationStyle[0]);
+			await Service.AddColumnChartPoint(zoom);
+
+			//var tp = locationStyles[0];
+			//await Service.AddColumnChartPoint(zoom);
+		});
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender) { }
+		if (!mcpSet && parent.loaded && bounds != null)
+		{
+			mcpSet = true;
+
+			TileMath.BestMapView(bounds.ToDoubleArray(), Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
+
+			var dotNetReference = DotNetObjectReference.Create(this);
+
+			await Service.SetMapState(locationStyles ?? new LocationStyle[0], dotNetReference);
+			await Service.InitDeckGL(bounds.CentreX, bounds.CentreY, ((int)Math.Floor(zoom)) - 1);
+
+			await Service.AddColumnChartPoint(zoom);
+
+		}
+		await base.OnAfterRenderAsync(firstRender);
+	}
+
+	public List<GeoPoint> GetLocation(LocationStyle style)
+	{
+		return new List<GeoPoint> {
+			style.Location
+		};
+	}
+
+	[JSInvokable("GetBrewersByVenue")]
+	public async Task<BrewerResult[]> GetBrewersByVenue(int venue, string style)
+	{
+		BrewerResult[]? results = await Http.GetFromJsonAsync<BrewerResult[]>($"api/location/{venue}/{style}/brewers");
+		return results ?? new BrewerResult[0];
+
+		//var mock = await mockRepo.GetMockedBrewerResults();
+		//return mock;
+	}
+
+
+	public List<PieSegment> GetGraphData(LocationStyle style)
+	{
+		return style.Styles.Select(a => new PieSegment { x = a.Name, y = a.Count }).ToList();
+	}
+
+	public class PieSegment
+	{
+		public string? x;
+		public double y;
+	}
+}

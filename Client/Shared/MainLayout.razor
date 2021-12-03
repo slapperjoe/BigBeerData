@@ -1,5 +1,12 @@
 ﻿@inherits LayoutComponentBase
 
+@inject HttpClient Http
+@inject BrowserService Service
+
+@using System.Net.Http
+@using BigBeerData.Shared
+@using Client.Shared
+
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -10,11 +17,11 @@
 		Big Beer Data v2
 	</MudAppBar>
 	<MudDrawer @bind-Open="@_drawerOpen">
-		<NavMenu/>
+		<NavMenu parent="@this" />
 	</MudDrawer>
 	<MudMainContent>
 		<MudContainer MaxWidth="MaxWidth.Medium">
-			@Body
+			<Client.Pages.Index @ref="mainPage" parent="@this" />
 		</MudContainer>
 	</MudMainContent>
 </MudLayout>
@@ -25,5 +32,32 @@
 	void DrawerToggle()
 	{
 		_drawerOpen = !_drawerOpen;
+	}
+
+	@code {
+		public bool loaded = false;
+		public Client.Pages.Index mainPage;
+		public List<AreaLocation> locations;
+		public int selected = 1;
+		
+		public async Task UpdateLocation(int id)
+		{
+			if (mainPage != null)
+			{
+				await Task.Run(async () => await mainPage.LocationUpdated(id));
+			}
+		}
+
+
+		public void setLoaded(bool loadedValue)
+		{
+			loaded = loadedValue;
+		}
+
+		protected override async Task OnInitializedAsync()
+		{
+			locations = await Http.GetFromJsonAsync<List<AreaLocation>>("api/location/current") ?? new List<AreaLocation>();
+			loaded = true;
+		}
 	}
 }

@@ -36,6 +36,7 @@ namespace Api.Locations
 						[HttpTrigger(AuthorizationLevel.Function, "get"  , Route = "Geo/bounds/{id}")]
 			HttpRequest req,	long id)
 		{
+			_logger.LogDebug("Location Bounds called: id: {id}", id);
 			var locations = await _context.Establishments.Where(a => a.LocationId == id).ToListAsync();
 			return new OkObjectResult(new GeoBounds(locations));
 		}
