@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-node@v2.5.0
         with:
           node-version: '16.13.0'
-      - run: apt-get install nodejs
+      - run: sudo apt-get install nodejs
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
