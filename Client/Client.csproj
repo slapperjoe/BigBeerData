@@ -46,8 +46,8 @@
   </ItemGroup>
 
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-		<Exec Command="if $(ConfigurationName) == Debug npm install" WorkingDirectory="npm_packages"   />
-		<Exec Command="if $(ConfigurationName) == Debug npm run build" WorkingDirectory="npm_packages" />
+		<Exec Command="if $(ConfigurationName) == Debug then npm install" WorkingDirectory="npm_packages"   />
+		<Exec Command="if $(ConfigurationName) == Debug then npm run build" WorkingDirectory="npm_packages" />
 	</Target>
 
 </Project>
