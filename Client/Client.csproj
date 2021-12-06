@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <TypeScriptTarget>ESNext</TypeScriptTarget>
+    <TypeScriptTarget>ES2020</TypeScriptTarget>
   </PropertyGroup>
 
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <TypeScriptTarget>ESNext</TypeScriptTarget>
+    <TypeScriptTarget>ES2020</TypeScriptTarget>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -13,8 +13,30 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
-    <TypeScriptModuleKind>umd</TypeScriptModuleKind>
+    <TypeScriptModuleKind>commonjs</TypeScriptModuleKind>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="npm_packages\src\compilerconfig.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\css\app.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="npm_packages\src\deckgl.ts" />
+    <Content Include="npm_packages\src\interfaces.js" />
+    <Content Include="npm_packages\src\interfaces.js.map" />
+    <Content Include="npm_packages\src\interfaces.ts" />
+    <Content Include="npm_packages\src\LayerExtensions.js" />
+    <Content Include="npm_packages\src\LayerExtensions.js.map" />
+    <Content Include="npm_packages\src\LayerExtensions.ts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="npm_packages\src\compilerconfig.json" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.0" PrivateAssets="all" />

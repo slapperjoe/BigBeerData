@@ -1,4 +1,5 @@
-﻿var interop = {
+﻿
+globalThis.interop = {
 	dotNet: null,
 	state: {
 		_revision: 1,
@@ -46,7 +47,7 @@
 	},
 
 	hookDotNet(dotNetObj: any) {
-		interop.dotNet = dotNetObj;
+		globalThis.interop.dotNet = dotNetObj;
 	},
 
 	InitDeckGL(longitude: number, latitude: number, zoom: number) {
@@ -80,5 +81,3 @@
 	latitude: 0,
 	label: ""
 }
-
-window.interop = interop;

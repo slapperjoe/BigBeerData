@@ -4,12 +4,28 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack ./src/index.js --output-path ../wwwroot/js --output-filename index.bundle.js --mode=production"
+    "build": "webpack ./src/index.js --output-path ../wwwroot/js --output-filename index.bundle.js",
+    "rawbuild": "webpack --mode development"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.10.3",
+    "@babel/plugin-proposal-function-bind": "^7.16.0",
+    "@babel/preset-env": "^7.16.4",
+    "@babel/preset-react": "^7.16.0",
+    "@babel/preset-stage-0": "^7.8.3",
+    "@types/node": "^16.11.11",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.1.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "raw-loader": "^4.0.1",
+    "source-map": "^0.5.7",
+    "source-map-loader": "1.0.1",
     "webpack": "^5.64.4",
     "webpack-cli": "^4.9.1"
   },

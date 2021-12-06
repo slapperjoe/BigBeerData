@@ -1,4 +1,4 @@
-var interop = {
+globalThis.interop = {
     dotNet: null,
     state: {
         _revision: 1,
@@ -15,8 +15,8 @@ var interop = {
     },
     setState(stateObj) {
         delete this.state._previousState;
-        this.state._previousState = Object.assign({}, this.state);
-        this.state = Object.assign(Object.assign(Object.assign({}, this.state), stateObj), { _revision: (this.state._revision + 1) });
+        this.state._previousState = { ...this.state };
+        this.state = { ...this.state, ...stateObj, _revision: (this.state._revision + 1) };
         //return this.state;
         return true;
         //fire change notifier
@@ -41,7 +41,7 @@ var interop = {
         return true;
     },
     hookDotNet(dotNetObj) {
-        interop.dotNet = dotNetObj;
+        globalThis.interop.dotNet = dotNetObj;
     },
     InitDeckGL(longitude, latitude, zoom) {
         //@ts-ignore
@@ -69,5 +69,4 @@ var interop = {
     latitude: 0,
     label: ""
 };
-window.interop = interop;
 //# sourceMappingURL=interop.js.map
