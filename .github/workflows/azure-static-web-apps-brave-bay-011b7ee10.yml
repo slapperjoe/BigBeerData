@@ -36,15 +36,6 @@ jobs:
           api_location: "Api" # Api source code path - optional
           output_location: "wwwroot" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-      - name: Azure SQL Deploy
-        uses: Azure/sql-action@v1
-        with:
-          # Name of the Azure SQL Server name, like Fabrikam.database.windows.net.
-          server-name: bigbeerdata.database.windows.net
-          # The connection string, including authentication information, for the Azure SQL Server database.
-          connection-string: Data Source=bigbeerdata.database.windows.net;Initial Catalog=BigBeerData.Core;User ID=BEERDUDE;Password=TheDudeHasAPassword123!@#;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False
-          # Path to DACPAC file to deploy
-          dacpac-package: BigBeerData.Core.dacpac
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
