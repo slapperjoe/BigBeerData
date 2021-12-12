@@ -2,7 +2,7 @@
 @inject HttpClient Http
 @inject BrowserService Service
 
-<MudNavMenu>
+<MudNavMenu Class="bubbles" Style="padding-top: 32px;">
 	@if (parent.locations == null)
 	{
 		<span>Loading menu..</span>
@@ -11,13 +11,14 @@
 	{
 		foreach (var location in parent.locations)
 		{
-			<MudNavLink Class="getStyleString(location.ID)" OnClick="async () =>
-											{
-												parent.loaded = false;
-												parent.selected = location.ID;
-												await parent.UpdateLocation(location.ID);
-												parent.loaded = true;
-											}">
+			<MudNavLink Icon="@selected(location.ID)" Style="@bgSelected(location.ID)"
+				OnClick="async () =>
+						{
+							parent.loaded = false;
+							parent.selected = location.ID;
+							await parent.UpdateLocation(location.ID);
+							parent.loaded = true;
+						}">
 				@location.Name
 			</MudNavLink>
 		}
@@ -29,17 +30,13 @@
 	[Parameter]
 	public MainLayout parent { get; set; }
 
-	private string? getStyleString(int currentId)
-	{
-		if (currentId == parent.selected && !parent.loaded)
-		{
-			return "spinner-border spinner-border-sm";
-		}
-		return null;
-	}
-
 	private string? selected(int currentId)
 	{
-		return (currentId == parent.selected ? "selected" : null);
+		return (currentId == parent.selected ? Icons.Material.Filled.LocalDrink : Icons.Material.Outlined.LocalDrink);
+	}
+
+	private string? bgSelected(int currentId)
+	{
+		return "font-size: 120%;"+ (currentId == parent.selected ? "background-color: rgba(0,0,0,0.15);" : "");
 	}
 }

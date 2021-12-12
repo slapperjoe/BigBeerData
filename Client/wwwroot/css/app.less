@@ -128,10 +128,12 @@ app {
   }
 }
 
+
 .sidebar {
   background-image: linear-gradient(180deg, #ece279 0%, #ffcc80 70%);
 
   .bubbles {
+    height: 100%;
     background-image: url(../img/water-drops.png);
     background-size: 50px 50px;
     background-repeat: repeat;
@@ -226,8 +228,14 @@ app {
   height: 100%;
   width: 100%;
   margin-top: -100px;
-  padding-left: calc(50%-60px);
+  margin-left: -30px;
+  padding-left: 50%;
   padding-top: 50vh;
+  
+}
+
+.loadingDiv .mud-navmenu {
+    height: 100%;
 }
 
 .navbar-toggler {
@@ -269,69 +277,6 @@ country-label {
   width: 100%;
   display: block;
   text-align: center;
-}
-
-
-@media (max-width: 767.98px) {
-  .main {
-    .top-row {
-      &:not(.auth) {
-        display: none;
-      }
-
-      &.auth {
-        justify-content: space-between;
-      }
-
-      a, .btn-link {
-        margin-left: 0;
-      }
-    }
-  }
-  .sidebar {
-    .topMenu {
-      display: block;
-    }
-  }
-}
-
-@media (min-width: 768px) {
-
-  app {
-    flex-direction: row;
-  }
-
-  .sidebar {
-    width: 250px;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-
-    .collapse {
-      /* Never collapse the sidebar for wide screens */
-      display: block;
-    }
-
-    .topMenu {
-      display: none;
-    }
-  }
-
-  .main {
-    .top-row {
-      position: sticky;
-      top: 0;
-    }
-
-    > div {
-      padding-left: 2rem !important;
-      padding-right: 1.5rem !important;
-    }
-  }
-
-  .navbar-toggler {
-    display: none;
-  }
 }
 
 @keyframes animatedBackground {

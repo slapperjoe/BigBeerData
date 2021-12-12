@@ -7,57 +7,69 @@
 @using BigBeerData.Shared
 @using Client.Shared
 
-<MudThemeProvider />
+<MudThemeProvider Theme="BeerTheme"/>
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-	<MudAppBar>
-		<MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-		Big Beer Data v2
-	</MudAppBar>
-	<MudDrawer @bind-Open="@_drawerOpen">
-		<NavMenu parent="@this" />
-	</MudDrawer>
-	<MudMainContent>
-		<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
-			<Client.Pages.Index @ref="mainPage" parent="@this" />
-		</MudContainer>
-	</MudMainContent>
+    <MudAppBar>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        Big Beer Data v2
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" Class="sidebar">
+        <NavMenu parent="@this" />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False">
+            <Client.Pages.Index @ref="mainPage" parent="@this" />
+        </MudContainer>
+    </MudMainContent>
 </MudLayout>
 
 @code {
-	bool _drawerOpen = true;
+    bool _drawerOpen = true;
 
-	void DrawerToggle()
-	{
-		_drawerOpen = !_drawerOpen;
-	}
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
 
-	@code {
-		public bool loaded = false;
-		public Client.Pages.Index mainPage;
-		public List<AreaLocation> locations;
-		public int selected = 1;
-		
-		public async Task UpdateLocation(int id)
-		{
-			if (mainPage != null)
-			{
-				await Task.Run(async () => await mainPage.LocationUpdated(id));
-			}
-		}
+    @code {
+        MudTheme BeerTheme = new MudTheme()
+        {
+            Palette = new Palette()
+            {
+                Primary = Colors.Yellow.Default,
+                Secondary = Colors.Brown.Darken2,
+                AppbarBackground = Colors.Shades.White,
+                AppbarText = Colors.Brown.Darken3
+            },
+        };
 
 
-		public void setLoaded(bool loadedValue)
-		{
-			loaded = loadedValue;
-		}
+        public bool loaded = false;
+        public Client.Pages.Index mainPage;
+        public List<AreaLocation> locations;
+        public int selected = 1;
+        
+        public async Task UpdateLocation(int id)
+        {
+            if (mainPage != null)
+            {
+                await Task.Run(async () => await mainPage.LocationUpdated(id));
+            }
+        }
 
-		protected override async Task OnInitializedAsync()
-		{
-			locations = await Http.GetFromJsonAsync<List<AreaLocation>>("api/location/current") ?? new List<AreaLocation>();
-			loaded = true;
-		}
-	}
+
+        public void setLoaded(bool loadedValue)
+        {
+            loaded = loadedValue;
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            locations = await Http.GetFromJsonAsync<List<AreaLocation>>("api/location/current") ?? new List<AreaLocation>();
+            loaded = true;
+        }
+    }
 }
