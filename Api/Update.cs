@@ -38,7 +38,7 @@ namespace BigBeerData.Functions
             _context = context;
         }
 
-        [FunctionName("TestStreaming")]
+        [FunctionName("Stream")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "TestStream," })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
@@ -234,14 +234,21 @@ namespace BigBeerData.Functions
                     a.Beer = prevBeer;
                 }
 
-                if (db.Checkins.Any(b => b.CheckinId == a.CheckinId))
+                if (db.Checkins.FirstOrDefault(b => b.CheckinTime == a.CheckinTime) != null || db.Checkins.Any(b => b.CheckinId == a.CheckinId))
                 {
                     alreadyAdded = true;
                 }
                 else
                 {
-                    db.Checkins.Add(a);
-                    result.LogOutput(log, " + Added " + a.Beer.BeerName);
+                    try
+                    {
+                        db.Checkins.Add(a);
+                        result.LogOutput(log, " + Added " + a.Beer.BeerName);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.LogError("Failed to add checkin: {checkinId},{exception}", a.CheckinId, ex);
+                    }
                 }
 
                 db.SaveChanges();
