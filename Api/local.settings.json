@@ -3,7 +3,7 @@
   "Values": {
     "AzureWebJobsStorage": "",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "DBConnection": "Data Source=(localdb)\\ProjectsV13;Initial Catalog=BigBeerData.Core;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"
+    "DBConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BigBeerData.Core;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"
   },
   "Host": {
     "CORS": "*"

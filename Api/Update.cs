@@ -38,43 +38,11 @@ namespace BigBeerData.Functions
             _context = context;
         }
 
-        [FunctionName("Stream")]
-        [OpenApiOperation(operationId: "Run", tags: new[] { "TestStream," })]
-        [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
-        public async Task Run1(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)]
-            HttpRequest req)
-        {
-            var response = req.HttpContext.Response;
-            response.StatusCode = 200;
-            response.ContentType = "text/plain";
-            await using var sw = new StreamWriter(response.Body);
-            await foreach (var msg in GetDataAsync())
-            {
-                await sw.WriteLineAsync(msg);
-                await sw.FlushAsync();
-                await Task.Delay(1000);
-            }
-
-
-            await sw.FlushAsync();
-        }
-
-        private async IAsyncEnumerable<string> GetDataAsync()
-        {
-            for (var i = 0; i < 100; ++i)
-            {
-                yield return $"Line {i}";
-            }
-        }
-
-
         [FunctionName("Update")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "UpdateDB" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
-        public async Task<IActionResult> Run(
+        public async Task<HttpResponse> Run(
                 [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
             HttpRequest req)
         {
@@ -88,7 +56,9 @@ namespace BigBeerData.Functions
             var newGet = false;
 
             var result = new StringBuilder();
-            _logger.LogInformation("Starting Data Scrape.");
+            var resp = req.HttpContext.Response;
+            StreamWriter sw = new StreamWriter(resp.Body);
+            await sw.WriteLineAsync("Starting Data Scrape.");
             List<Establishment> establishments = _context.Establishments.Include(i => i.Checkins).ToList();
 
             foreach (var establishment in establishments)
@@ -107,12 +77,12 @@ namespace BigBeerData.Functions
                     _context.SaveChanges();
 
                     //get newest	
-                    _logger.LogInformation("Looking for new beers in {establishmentName}", establishment.EstablishmentName);
-                    t = await CheckinsGet(establishment.EstablishmentId, client);
+                    await sw.WriteLineAsync($"Looking for new beers in {establishment.EstablishmentName}");
+                    t = await CheckinsGet(establishment.EstablishmentId, client, sw);
                 }
                 else
                 {
-                    _logger.LogInformation("Already searched today for beers in {establishmentName}", establishment.EstablishmentName);
+                    await sw.WriteLineAsync($"Already searched today for beers in {establishment.EstablishmentName}");
                 }
 
                 counter++;
@@ -122,25 +92,25 @@ namespace BigBeerData.Functions
                     if (t != null)
                     {
                         //process and keep getting new unstored
-                        alreadyAddedToDatabase = ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result);
+                        alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
                         while (!alreadyAddedToDatabase && counter < MAX_REQUESTS)
                         {
                             var newMax = t.OrderByDescending(a => a.CheckinTime).Last().CheckinTime;
 
-                            _logger.LogInformation("Looking for less new beers in {establishmentName}", establishment.EstablishmentName);
+                            await sw.WriteLineAsync($"Looking for less new beers in {establishment.EstablishmentName}");
 
-                            t = await CheckinsGet(establishment.EstablishmentId, client);
+                            t = await CheckinsGet(establishment.EstablishmentId, client, sw);
                             counter++;
                             try
                             {
-                                alreadyAddedToDatabase = ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result);
+                                alreadyAddedToDatabase =await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
                             }
                             catch (Exception e)
                             {
                                 UpdateEstablishment(establishment, e);
                                 _context.Establishments.Update(establishment);
                                 _context.SaveChanges();
-                                _logger.LogError(e, "Updating Establishment");
+                                await sw.WriteLineAsync($"Updating Establishment {e}");
                                 counter = MAX_REQUESTS;
                             }
                         }
@@ -149,28 +119,28 @@ namespace BigBeerData.Functions
                     //get older
                     if (counter < MAX_REQUESTS && !newGet && !establishment.MaxedCheckinHistory)
                     {
-                        t = await CheckinsGet(establishment.EstablishmentId, client);
+                        t = await CheckinsGet(establishment.EstablishmentId, client, sw);
                         counter++;
                         try
                         {
-                            alreadyAddedToDatabase = ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result);
-                            while (!alreadyAddedToDatabase && counter < MAX_REQUESTS)
+                            alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
+                            while (t.Count() > 0 && !alreadyAddedToDatabase && counter < MAX_REQUESTS)
                             {
                                 var newMax = t.OrderByDescending(a => a.CheckinTime).Last().CheckinTime;
 
-                                _logger.LogInformation("Looking for old beers in {establishmentName}", establishment.EstablishmentName);
-                                t = await CheckinsGet(establishment.EstablishmentId, client);
+                                await sw.WriteLineAsync("Looking for old beers in {establishment.EstablishmentName}");
+                                t = await CheckinsGet(establishment.EstablishmentId, client, sw);
                                 counter++;
                                 try
                                 {
-                                    alreadyAddedToDatabase = ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result);
+                                    alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
                                 }
                                 catch (Exception e)
                                 {
                                     UpdateEstablishment(establishment, e);
                                     _context.Establishments.Update(establishment);
                                     _context.SaveChanges();
-                                    _logger.LogError(e, "Updating Establishment");
+                                    await sw.WriteLineAsync($"Updating Establishment {e}");
                                     counter = MAX_REQUESTS;
                                 }
                             }
@@ -180,25 +150,30 @@ namespace BigBeerData.Functions
                             UpdateEstablishment(establishment, e);
                             _context.Establishments.Update(establishment);
                             _context.SaveChanges();
-                            _logger.LogError(e, "Failed to update");
+                            await sw.WriteLineAsync($"Failed to update {e}");
 
 
-                            return new BadRequestObjectResult(e);
+                            //return new BadRequestObjectResult(e);
                         }
                     }
                 }
                 catch (Exception e)
                 {
                     UpdateEstablishment(establishment, e);
-                    _logger.LogError(e, "Failed to update");
+                    await sw.WriteLineAsync($"Failed to update {e}");
 
-                    return new BadRequestObjectResult(e);
+                    //return new BadRequestObjectResult(e);
                 }
 
             }
-            _logger.LogInformation("Update complete.");
+            await sw.WriteLineAsync("Update complete.");
 
-            return new OkObjectResult(result.ToString());
+            resp.ContentType = "text/plain";
+            await sw.FlushAsync();
+            resp.StatusCode = (int)HttpStatusCode.OK;
+            return resp;
+
+            //return new OkObjectResult(result.ToString());
         }
 
         private static void UpdateEstablishment(Establishment establishment, Exception e)
@@ -209,10 +184,10 @@ namespace BigBeerData.Functions
             }
         }
 
-        private static bool ProcessCheckins(List<Checkin> t, bool alreadyAdded, BigBeerContext db, ILogger log,
-            StringBuilder result)
+        private async static Task<bool> ProcessCheckins(List<Checkin> t, bool alreadyAdded, BigBeerContext db, ILogger log,
+            StringBuilder result, StreamWriter sw)
         {
-            t.ForEach(a =>
+            t.ForEach(async a =>
             {
                 var previousBeer = db.Beers.FirstOrDefault(b => b.Bid == a.Beer.Bid);
                 if (previousBeer != null)
@@ -234,7 +209,8 @@ namespace BigBeerData.Functions
                     a.Beer = prevBeer;
                 }
 
-                if (db.Checkins.FirstOrDefault(b => b.CheckinTime == a.CheckinTime) != null || db.Checkins.Any(b => b.CheckinId == a.CheckinId))
+                if (db.Checkins.FirstOrDefault(b => b.CheckinTime == a.CheckinTime) != null || 
+                                db.Checkins.Any(b => b.CheckinId == a.CheckinId))
                 {
                     alreadyAdded = true;
                 }
@@ -243,11 +219,11 @@ namespace BigBeerData.Functions
                     try
                     {
                         db.Checkins.Add(a);
-                        result.LogOutput(log, " + Added " + a.Beer.BeerName);
+                        await sw.WriteLineAsync(" + Added " + a.Beer.BeerName);
                     }
                     catch (Exception ex)
                     {
-                        log.LogError("Failed to add checkin: {checkinId},{exception}", a.CheckinId, ex);
+                        await sw.WriteLineAsync($"Failed to add checkin: {a.CheckinId},{ex}");
                     }
                 }
 
@@ -257,7 +233,7 @@ namespace BigBeerData.Functions
             return alreadyAdded;
         }
 
-        public async static Task<List<Checkin>> CheckinsGet(int id, HttpClient client, int? max_id = null)
+        public async static Task<List<Checkin>> CheckinsGet(int id, HttpClient client, StreamWriter sw, int? max_id = null)
         {
             var requestString = "venue/checkins/" + id + "?client_id=" + client_id +
                 "&client_secret=" + client_secret;
@@ -283,18 +259,26 @@ namespace BigBeerData.Functions
             // }
             try
             {
-                var checkinItems = (IEnumerable<dynamic>)stuff.response.checkins.items;
-
-                var checkinSet = checkinItems.Select(item => new Checkin
+                if (stuff.response == null)
                 {
-                    CheckinId = (int)item.checkin_id,
-                    CheckinTime = DateTime.Parse(item.created_at),
-                    Beer = GetBeer(item),
-                    Rating = item.rating_score,
-                    EstablishmentId = id
-                });
+                    await sw.WriteLineAsync("Venue has no items");
+                }
+                else
+                {
+                    var checkinItems = (IEnumerable<dynamic>)stuff.response.checkins.items;
 
-                return checkinSet.ToList();
+                    var checkinSet = checkinItems.Select(item => new Checkin
+                    {
+                        CheckinId = (int)item.checkin_id,
+                        CheckinTime = DateTime.Parse(item.created_at),
+                        Beer = GetBeer(item),
+                        Rating = item.rating_score,
+                        EstablishmentId = id
+                    });
+
+                    return checkinSet.ToList();
+                }
+                return new List<Checkin>();
 
             }
             catch (Exception)
