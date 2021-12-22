@@ -373,27 +373,30 @@ function generateNewTextLayer(zoom) {
 		return { centroid: [a.location.x, a.location.y], name: a.name }
 	});
 
+	let fontSize = (zoom * 3) - 10;
+	
 	if (zoom >= 14) {
-		return new TextLayer({
-			id: 'text-layer' + zoom,
-			data: locationData,
-			pickable: true,
-			billboard: true,
-			getPosition: d => d.centroid,
-			getText: d => d.name,
-			getSize: 32,
-			getAngle: 0,
-			getTextAnchor: 'middle',
-			getAlignmentBaseline: 'center',
-			getPixelOffset: (a, b) => {
-				var pixelVal = pixelValue(a.centroid[1], 64, zoom);
-				console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
-				return [0, pixelVal];
-			}
-		})
-	} else {
-		return new TextLayer({});
-	};
+		fontSize = 32;
+	}
+	console.log(fontSize);
+	return new TextLayer({
+		id: 'text-layer' + zoom,
+		data: locationData,
+		pickable: true,
+		billboard: true,
+		getPosition: d => d.centroid,
+		getText: d => d.name,
+		getSize: fontSize,
+		getAngle: 0,
+		getTextAnchor: 'middle',
+		getAlignmentBaseline: 'center',
+		fontFamily: "Montserrat",
+		getPixelOffset: (a, b) => {
+			var pixelVal = pixelValue(a.centroid[1], 64, zoom);
+			//console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
+			return [0, pixelVal];
+		}
+	});
 }
 
 function pixelValue(latitude, meters, zoomLevel) {
