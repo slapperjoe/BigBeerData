@@ -42,7 +42,7 @@ namespace BigBeerData.Functions
         [OpenApiOperation(operationId: "Run", tags: new[] { "UpdateDB" })]
         [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
-        public async Task<HttpResponse> Run(
+        public async Task Run(
                 [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
             HttpRequest req)
         {
@@ -171,7 +171,7 @@ namespace BigBeerData.Functions
             resp.ContentType = "text/plain";
             await sw.FlushAsync();
             resp.StatusCode = (int)HttpStatusCode.OK;
-            return resp;
+            throw new Exception("Complete");
 
             //return new OkObjectResult(result.ToString());
         }
