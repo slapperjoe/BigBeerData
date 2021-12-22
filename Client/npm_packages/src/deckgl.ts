@@ -155,6 +155,7 @@ export module deckgl {
 				getPosition: d => d.centroid,
 				getText: d => d.name,
 				getSize: 32,
+				fontFamily: "Montserrat",
 				getAngle: 0,
 				getTextAnchor: 'middle',
 				getAlignmentBaseline: 'center',
