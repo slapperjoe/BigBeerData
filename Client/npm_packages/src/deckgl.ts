@@ -160,13 +160,30 @@ export module deckgl {
 				getTextAnchor: 'middle',
 				getAlignmentBaseline: 'center',
 				getPixelOffset: (a, b) => {
-					var pixelVal = pixelValue(a.centroid[1], 64, zoom);
-					console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
+					const pixelVal = pixelValue(a.centroid[1], 64, zoom);
+					//console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
 					return [0, pixelVal];
 				}
 			})
 		} else {
-			return new dgl.TextLayer({});
+			return new dgl.TextLayer({
+				id: 'text-layer' + zoom,
+				data: locationData,
+				pickable: true,
+				billboard: true,
+				getPosition: d => d.centroid,
+				getText: d => d.name,
+				getSize: 16,
+				fontFamily: "Montserrat",
+				getAngle: 0,
+				getTextAnchor: 'middle',
+				getAlignmentBaseline: 'center',
+				getPixelOffset: (a, b) => {
+					const pixelVal = pixelValue(a.centroid[1], 64, zoom);
+					//console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
+					return [0, pixelVal];
+				}
+			})
 		};
 	}
 
