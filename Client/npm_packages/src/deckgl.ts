@@ -161,7 +161,6 @@ export module deckgl {
 				getAlignmentBaseline: 'center',
 				getPixelOffset: (a, b) => {
 					const pixelVal = pixelValue(a.centroid[1], 64, zoom);
-					//console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
 					return [0, pixelVal];
 				}
 			})
@@ -173,14 +172,13 @@ export module deckgl {
 				billboard: true,
 				getPosition: d => d.centroid,
 				getText: d => d.name,
-				getSize: 16,
+				getSize: 18,
 				fontFamily: "Montserrat",
 				getAngle: 0,
 				getTextAnchor: 'middle',
 				getAlignmentBaseline: 'center',
 				getPixelOffset: (a, b) => {
 					const pixelVal = pixelValue(a.centroid[1], 64, zoom);
-					//console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
 					return [0, pixelVal];
 				}
 			})
