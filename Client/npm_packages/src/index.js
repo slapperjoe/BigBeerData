@@ -24,23 +24,23 @@ window.interop = {
 		longitude: 0,
 		latitude: 0,
 		label: ""
+	},
+	setState: (stateObj) => {
+		delete window.interop.state._previousState;
+		window.interop.state._previousState = Object.assign({}, window.interop.state);
+		window.interop.state = Object.assign(Object.assign(Object.assign({}, window.interop.state), stateObj), { _revision: (window.interop.state._revision + 1) });
+		//return this.state;
+		return true;
+		//fire change notifier
+	},
+	getDimensions: () => {
+		return {
+			width: window.innerWidth,
+			height: window.innerHeight
+		};
 	}
 };
 
-window.interop.setState = (stateObj) => {
-	delete window.interop.state._previousState;
-	window.interop.state._previousState = Object.assign({}, window.interop.state);
-	window.interop.state = Object.assign(Object.assign(Object.assign({}, window.interop.state), stateObj), { _revision: (window.interop.state._revision + 1) });
-	//return this.state;
-	return true;
-	//fire change notifier
-};
-window.interop.getDimensions = () => {
-	return {
-		width: window.innerWidth,
-		height: window.innerHeight
-	};
-};
 window.interop.getRenderArea = () => {
 	var renderArea = document.getElementById('renderArea');
 	if (renderArea) {
@@ -55,7 +55,7 @@ window.interop.consoleLog = (textString) => {
 	return true;
 };
 window.interop.hookDotNet = (dotNetObj) => {
-	interop.dotNet = dotNetObj;
+	window.interop.dotNet = dotNetObj;
 };
 
 function throwOnGLError(err, funcName, args) {
