@@ -17,7 +17,6 @@ window.interop = {
 			colourMap: []
 		},
 		mapLoaded: true,
-		map: null,
 		deck: null,
 		currentZoom: 0,
 		//layerSet: null,
@@ -30,7 +29,7 @@ window.interop = {
 		window.interop.state._previousState = Object.assign({}, window.interop.state);
 		window.interop.state = Object.assign(Object.assign(Object.assign({}, window.interop.state), stateObj), { _revision: (window.interop.state._revision + 1) });
 		//return this.state;
-		return true;
+		return window.interop.state;
 		//fire change notifier
 	},
 	getDimensions: () => {
@@ -98,8 +97,10 @@ window.interop.FlyTo = (longitude, latitude, zoom) => {
 
 window.interop.SetMapState = (...styles) => {
 	//@ts-ignore
-	window.interop.setState({ map: styles, layers: [] });
-	return true;
+	var jim = window.interop.setState({ label: "Bpb", map: styles, layers: [] });
+	debugger;
+	console.log(jim);
+	return jim;
 }
 
 window.interop.InitDeckGL = (longitude, latitude, zoom) => {
@@ -131,9 +132,7 @@ window.interop.InitDeckGL = (longitude, latitude, zoom) => {
 		initialViewState: INITIAL_VIEW_STATE,
 		controller: true,
 		onWebGLInitialized: (gl) => {
-			// @ts-ignore
 			gl = WebGLDebugUtils.makeDebugContext(gl, throwOnGLError, logGLCall);
-			// @ts-ignore
 			window.deckGLContext = gl;
 		},
 		onViewStateChange: ({ viewState, interactionState, oldViewState }) => {
@@ -145,10 +144,10 @@ window.interop.InitDeckGL = (longitude, latitude, zoom) => {
 				pitch: viewState.pitch
 			});
 			if (interactionState.isZooming) {
-				if (window.interop.state.layers.length == 4) {
+				if (window.interop.state.layers.length == 5) {
 					window.interop.setState({
 						layers: [window.interop.state.layers[0], generateNewTextLayer(viewState.zoom),
-						window.interop.state.layers[2], window.interop.state.layers[3]]
+						window.interop.state.layers[2], window.interop.state.layers[3], window.interop.state.layers[4]]
 					})
 				}
 				else {
@@ -243,9 +242,7 @@ window.interop.AddColumnChartPoint = (zoom) => {
 										return [0, num / total * 360]
 									}
 									return [last / total * 360, rolling / total * 360]
-								})
-									//@ts-ignore
-									.flat();
+								}).flat();
 								d.angleData = sliceData;
 								outSliceDataLength.push(sliceData.length);
 								outSliceData.push(sliceData);
@@ -343,8 +340,25 @@ window.interop.AddColumnChartPoint = (zoom) => {
 								getColor: d => [255, 214, 0],
 								getOrientation: d => [0, 0, 270]
 							})
+							const pieLabelLayer = new TextLayer({
+								id: 'pie-text-layer' + zoom,
+								data: result,
+								//pickable: true,
+								//billboard: true,
+								getPosition: d => [d.location.x, d.location.y],
+								getText: d => d.name,
+								getSize: 24,
+								getAngle: 0,
+								getTextAnchor: 'middle',
+								getAlignmentBaseline: 'center',
+								fontFamily: "Montserrat",
+								getPixelOffset: (a, b) => {
+									var pixelVal = pixelValue(a.location.y, 64, zoom);
+									return [0, pixelVal];
+								}
+							});
 							window.interop.setState({
-								layers: [window.interop.state.layers[0], window.interop.state.layers[1], arcLayer, pieChartLayer]
+								layers: [window.interop.state.layers[0], window.interop.state.layers[1], arcLayer, pieChartLayer, pieLabelLayer]
 							})
 							window.interop.deck.setProps({
 								layers: window.interop.state.layers
