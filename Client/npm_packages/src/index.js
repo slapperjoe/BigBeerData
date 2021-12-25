@@ -142,13 +142,15 @@ window.interop.InitDeckGL = (longitude, latitude, zoom) => {
 			if (interactionState.isZooming) {
 				if (window.interop.state.layers.length >= 2) {
 					let newLayers = [...window.interop.state.layers]
-					newLayers[1] = generateNewTextLayer(viewState.zoom);
+					newLayers[1] = generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64);
+					newLayers[window.interop.state.layers.length - 1] = generateNewTextLayer(viewState.zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
 					window.interop.setState({
 						layers: newLayers
 					})
 				}
 				else {
-					window.interop.setState({ layers: [window.interop.state.layers[0], generateNewTextLayer(viewState.zoom)] })
+					window.interop.setState({
+						layers: [window.interop.state.layers[0], generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64)] })
 				}
 				window.interop.deck.setProps({
 					layers: window.interop.state.layers
@@ -223,7 +225,7 @@ window.interop.AddColumnChartPoint = (zoom) => {
 					window.interop.dotNet.invokeMethodAsync('GetBrewersByVenue', a.object.venue, a.object.name)
 						.then((result) => {
 							window.interop.setState({
-								brewerMap: result.map(a => a.id)
+								brewerMap: result
 							})
 								
 							const arcLayer = new ArcLayer({
@@ -271,23 +273,10 @@ window.interop.AddColumnChartPoint = (zoom) => {
 								getOrientation: d => [0, 0, 270]
 							}))
 
-							const pieLabelLayer = new TextLayer({
-								id: 'pie-text-layer' + zoom,
-								data: result,
-								//pickable: true,
-								//billboard: true,
-								getPosition: d => [d.location.x, d.location.y],
-								getText: d => d.name,
-								getSize: 24,
-								getAngle: 0,
-								getTextAnchor: 'middle',
-								getAlignmentBaseline: 'center',
-								fontFamily: "Montserrat",
-								getPixelOffset: (a, b) => {
-									var pixelVal = pixelValue(a.location.y, 64, zoom);
-									return [0, pixelVal];
-								}
-							});
+
+
+							const pieLabelLayer = generateNewTextLayer(zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
+
 							window.interop.setState({
 								layers: [window.interop.state.layers[0], window.interop.state.layers[1], arcLayer, pieChartLayers, pieLabelLayer].flat()
 							})
@@ -299,7 +288,7 @@ window.interop.AddColumnChartPoint = (zoom) => {
 						});
 				}
 				//onHover: ({x, y, object}) => setTooltip(x, y, object ? `${object.name}\n${object.address}` : null)
-			}), generateNewTextLayer(zoom)]
+			}), generateNewTextLayer(zoom, window.interop.state.map, 'text-layer', 64)]
 		});
 
 		window.interop.deck.setProps({
@@ -311,10 +300,9 @@ window.interop.AddColumnChartPoint = (zoom) => {
 }
 
 
-function generateNewTextLayer(zoom) {
+function generateNewTextLayer(zoom, dataSet, layerName, offset ) {
 
-	var mapVals = window.interop.state.map;
-	var locationData = mapVals.map((a) => {
+	var locationData = dataSet.map((a) => {
 		return { centroid: [a.location.x, a.location.y], name: a.name }
 	});
 
@@ -325,7 +313,7 @@ function generateNewTextLayer(zoom) {
 	}
 	console.log(fontSize);
 	return new TextLayer({
-		id: 'text-layer' + zoom,
+		id: layerName+'-' + zoom,
 		data: locationData,
 		pickable: true,
 		billboard: true,
@@ -337,7 +325,7 @@ function generateNewTextLayer(zoom) {
 		getAlignmentBaseline: 'center',
 		fontFamily: "Montserrat",
 		getPixelOffset: (a, b) => {
-			var pixelVal = pixelValue(a.centroid[1], 64, zoom);
+			var pixelVal = pixelValue(a.centroid[1], offset, zoom);
 			//console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
 			return [0, pixelVal];
 		}
