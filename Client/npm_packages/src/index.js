@@ -1,6 +1,7 @@
 ﻿import * as mapboxgl from "mapbox-gl"
 import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl"
-import { CylinderGeometry } from "luma.gl"
+//import { CylinderGeometry } from "luma.gl"
+import { Texture2D, CylinderGeometry } from "@luma.gl/core"
 
 window.interop = {
 	dotNet: null,
@@ -11,11 +12,6 @@ window.interop = {
 		colourMap: [],
 		layers: [],
 		brewerMap: [],
-		uniformData: {
-			outSliceLength: [],
-			outSliceData: [],
-			colourMap: []
-		},
 		mapLoaded: true,
 		deck: null,
 		currentZoom: 0,
@@ -144,10 +140,11 @@ window.interop.InitDeckGL = (longitude, latitude, zoom) => {
 				pitch: viewState.pitch
 			});
 			if (interactionState.isZooming) {
-				if (window.interop.state.layers.length == 5) {
+				if (window.interop.state.layers.length >= 2) {
+					let newLayers = [...window.interop.state.layers]
+					newLayers[1] = generateNewTextLayer(viewState.zoom);
 					window.interop.setState({
-						layers: [window.interop.state.layers[0], generateNewTextLayer(viewState.zoom),
-						window.interop.state.layers[2], window.interop.state.layers[3], window.interop.state.layers[4]]
+						layers: newLayers
 					})
 				}
 				else {
@@ -166,10 +163,12 @@ window.interop.InitDeckGL = (longitude, latitude, zoom) => {
 			if (hv.object) {
 				switch (hv.layer.id) {
 					case ("column-layer"):
-						return `${hv.object.venuename}\r\n${hv.object.name} - ${hv.object.value}`;
-					case ("scatterplot-layer"):
-						return `${hv.object.name} \r\n ${hv.object.url}`;
+						return `${hv.object.venuename}\r\n${hv.object.name} - ${hv.object.value}`;					
 				}
+				if (hv.layer.id.indexOf('piechart-layer') == 0) {
+					console.log(hv);
+					return "bob";
+                }
 			}
 		}
 	});
@@ -226,99 +225,7 @@ window.interop.AddColumnChartPoint = (zoom) => {
 							window.interop.setState({
 								brewerMap: result.map(a => a.id)
 							})
-							let outSliceDataLength = [];
-							let outSliceData = [];
-							result.forEach((d) => {
-								let counts = d.beersBrewed.map(a => a.count)
-								let total = 0;
-								let rolling = 0;
-								let last = 0;
-								counts.forEach(n => { total += n; });
-								//@ts-ignore
-								const sliceData = counts.map((num, ind, arr) => {
-									last = rolling;
-									rolling += num
-									if (ind == 0) {
-										return [0, num / total * 360]
-									}
-									return [last / total * 360, rolling / total * 360]
-								}).flat();
-								d.angleData = sliceData;
-								outSliceDataLength.push(sliceData.length);
-								outSliceData.push(sliceData);
-							});
-
-							//@ts-ignore
-							//const brewerLayer = new LayerExtensions.PieScatterplotLayer({
-							//	id: 'piescatterplot-layer',
-							//	data: result,
-							//	pickable: true,
-							//	opacity: 0.8,
-							//	stroked: true,
-							//	filled: true,
-							//	radiusScale: 4,
-							//	radiusMinPixels: 1,
-							//	radiusMaxPixels: 100,
-							//	lineWidthMinPixels: 1,
-
-							//	getPosition: d => [d.location.x, d.location.y],
-							//	getRadius: d => 48,
-							//	getFillColor: d => [255, 140, 0],
-							//	getLineColor: d => [0, 0, 0],
-							//	getBrewerIndex: d => {
-							//		return window.interop.state.brewerMap.indexOf(d.id);
-							//	},
-							//	getStartIndex: //d => d.beersBrewed.map(a => a.count)
-							//		function (d: BrewerResult) {
-							//			var index = window.interop.state.brewerMap.indexOf(d.id);
-							//			let startIndex = 0;
-							//			for (var i = 0; i < index; i++) {
-							//				startIndex += outSliceDataLength[i]
-							//			}
-							//			return startIndex;
-							//		},
-							//	getEndIndex: //d => d.beersBrewed.map(a => a.count)
-							//		function (d: BrewerResult) {
-							//			var index = window.interop.state.brewerMap.indexOf(d.id);
-							//			let endIndex = 0;
-							//			for (var i = 0; i <= index; i++) {
-							//				endIndex += outSliceDataLength[i]
-							//			}
-							//			return endIndex - 1;
-							//		},
-							//	//getAngleData:
-							//	//	(d: BrewerResult) => [0, 36, 36, 288, 288, 324, 324, 360],//.angleData,
-							//	getAngleNumber: (d: BrewerResult) => d.angleData.length,//4,//d.angleData.length,
-
-							//	outSliceLength: outSliceDataLength, //[8]
-							//	//@ts-ignore
-							//	outSliceData: outSliceData.flat(), //[0, 36, 36, 288, 288, 324, 324, 360],
-							//	breweryCount: outSliceDataLength.length, //1
-							//	//@ts-ignore
-							//	totalLength: outSliceData.flat().length, //8
-							//});
-
-							//@ts-ignore
-							window.interop.setState({
-								uniformData: {
-									//@ts-ignore
-									//colourMap: ColourValues.map( a => [a[0]/255, a[1]/255, a[2]/255]).flat()
-									colourMap: [
-										1.0, 0.0, 0.0,
-										0.0, 1.0, 0.0,
-										0.0, 0.0, 1.0,
-										1.0, 0.5, 0.0,
-										0.0, 1.0, 0.0,
-										0.0, 0.0, 1.0,
-										1.0, 0.0, 0.0,
-										0.0, 1.0, 0.0,
-										0.0, 0.0, 1.0,
-										1.0, 0.0, 0.0,
-										0.0, 1.0, 0.0,
-										0.0, 0.0, 1.0
-									]
-								}
-							});
+								
 							const arcLayer = new ArcLayer({
 								id: 'arc-layer',
 								data: result,
@@ -330,16 +237,40 @@ window.interop.AddColumnChartPoint = (zoom) => {
 								getTargetColor: a.object.colour,
 							});
 
-							const pieChartLayer = new SimpleMeshLayer({
-								id: 'piechart-layer',
-								data: result,
-								texture: '/img/texture.png',
+							const pieChartLayers = result.map(item => new SimpleMeshLayer({
+								id: 'piechart-layer-' + item.name,
+								data: [item],
+								texture: new Promise((resolve, reject) => {
+									let dataArray = [];
+									item.beersBrewed.forEach((bb, i) => {
+										for (var j = 0; j < bb.count; j++) {
+											dataArray.push(ColourValues[i])
+										}
+									});
+									const texture = new Texture2D(window.deckGLContext, {
+										width: item.beersBrewed.flatMap(a => a.count).reduce((a, b) => a + b, 0),
+										height: 1,
+										format: window.deckGLContext.RGB,
+										data: new Uint8Array(dataArray.flat()),
+										parameters: {
+											[window.deckGLContext.TEXTURE_MAG_FILTER]: window.deckGLContext.NEAREST,
+											[window.deckGLContext.TEXTURE_MIN_FILTER]: window.deckGLContext.NEAREST
+										},
+										pixelStore: {
+											[window.deckGLContext.UNPACK_FLIP_Y_WEBGL]: true
+										},
+										mipmaps: true
+									});
+									resolve(texture);
+								}),
+								
 								mesh: new CylinderGeometry({ radius: 5, height: 1, topCap: true, nradial: 48, bottomCap: false }),
-								sizeScale: 4,
+								sizeScale: 16,
 								getPosition: d => [d.location.x, d.location.y],
 								getColor: d => [255, 214, 0],
 								getOrientation: d => [0, 0, 270]
-							})
+							}))
+
 							const pieLabelLayer = new TextLayer({
 								id: 'pie-text-layer' + zoom,
 								data: result,
@@ -358,7 +289,7 @@ window.interop.AddColumnChartPoint = (zoom) => {
 								}
 							});
 							window.interop.setState({
-								layers: [window.interop.state.layers[0], window.interop.state.layers[1], arcLayer, pieChartLayer, pieLabelLayer]
+								layers: [window.interop.state.layers[0], window.interop.state.layers[1], arcLayer, pieChartLayers, pieLabelLayer].flat()
 							})
 							window.interop.deck.setProps({
 								layers: window.interop.state.layers
