@@ -9,9 +9,10 @@ namespace Client
 {
     public class BrowserService
     {
-        private readonly IJSRuntime _js;
 
         public DataState state { get; set; }
+
+        private readonly IJSRuntime _js;        
 
         public BrowserService(IJSRuntime js)
         {
@@ -55,7 +56,7 @@ namespace Client
           DotNetObjectReference<Pages.Index> dotNetRef)
         {
             await _js.InvokeVoidAsync("interop.hookDotNet", dotNetRef);
-            state = await _js.InvokeAsync<DataState>("interop.SetMapState", styles);
+            await _js.InvokeAsync<DataState>("interop.SetMapState", styles);
             return true;
         }
 

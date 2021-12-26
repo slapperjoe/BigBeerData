@@ -47,6 +47,7 @@
 
 	public bool mcpSet = false;
 
+
 	protected override async Task OnInitializedAsync()
 	{
 		await GetMainArea();
@@ -80,15 +81,15 @@
 			var dotNetReference = DotNetObjectReference.Create(this);
 
 
-			//await Service.InitDeckGL(bounds.CentreX, bounds.CentreY, ((int)Math.Floor(zoom)) - 1);
-			await Service.FlyTo(bounds?.CentreX ?? cntrLat, bounds?.CentreY ?? cntrLong, ((int)Math.Floor(zoom)) - 1);
+		//await Service.InitDeckGL(bounds.CentreX, bounds.CentreY, ((int)Math.Floor(zoom)) - 1);
+		await Service.FlyTo(bounds?.CentreX ?? cntrLat, bounds?.CentreY ?? cntrLong, ((int)Math.Floor(zoom)) - 1);
 
 			await Service.UpdateStyles(locationStyles ?? new LocationStyle[0]);
 			await Service.AddColumnChartPoint(zoom);
 
-			//var tp = locationStyles[0];
-			//await Service.AddColumnChartPoint(zoom);
-		});
+		//var tp = locationStyles[0];
+		//await Service.AddColumnChartPoint(zoom);
+	});
 	}
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -126,6 +127,15 @@
 
 		//var mock = await mockRepo.GetMockedBrewerResults();
 		//return mock;
+	}
+
+	[JSInvokable("SetState")]
+	public async Task<bool> SetState(DataState state)
+	{		
+		return await Task.Run<bool>(() => { 
+			Service.state = state;
+			return true; 
+		});
 	}
 
 

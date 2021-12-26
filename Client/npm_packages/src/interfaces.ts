@@ -26,8 +26,4 @@ export interface BrewerResult {
 	angleData?: Array<number>
 }
 
-declare global {
-	interface Window {
-		interop: any;
-	}
-}
+

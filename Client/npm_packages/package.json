@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack ./src/index.js --output-path ../wwwroot/js --output-filename index.bundle.js",
-    "rawbuild": "webpack --mode development"
+    "build": "tsc src/index.ts && webpack ./src/index.js --output-path ../wwwroot/js --output-filename index.bundle.js"
   },
   "keywords": [],
   "author": "",

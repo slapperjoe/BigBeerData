@@ -1,340 +1,335 @@
-﻿import * as mapboxgl from "mapbox-gl"
-import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl"
-//import { CylinderGeometry } from "luma.gl"
-import { Texture2D, CylinderGeometry } from "@luma.gl/core"
-
+"use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+exports.__esModule = true;
+var mapboxgl = require("mapbox-gl");
+var deck_gl_1 = require("deck.gl");
+var core_1 = require("@luma.gl/core");
 window.interop = {
-	dotNet: null,
-	state: {
-		_revision: 1,
-		map: [],
-		_previousState: null,
-		colourMap: [],
-		layers: [],
-		brewerMap: [],
-		mapLoaded: true,
-		deck: null,
-		currentZoom: 0,
-		//layerSet: null,
-		longitude: 0,
-		latitude: 0,
-		label: ""
-	},
-	setState: (stateObj) => {
-		delete window.interop.state._previousState;
-		window.interop.state._previousState = Object.assign({}, window.interop.state);
-		window.interop.state = Object.assign(Object.assign(Object.assign({}, window.interop.state), stateObj), { _revision: (window.interop.state._revision + 1) });
-		//return this.state;
-		return window.interop.state;
-		//fire change notifier
-	},
-	getDimensions: () => {
-		return {
-			width: window.innerWidth,
-			height: window.innerHeight
-		};
-	}
+    dotNet: null,
+    state: {
+        _revision: 1,
+        map: [],
+        _previousState: null,
+        colourMap: [],
+        layers: [],
+        brewerMap: [],
+        mapLoaded: true,
+        deck: null,
+        currentZoom: 0,
+        //layerSet: null,
+        longitude: 0,
+        latitude: 0,
+        label: ""
+    },
+    setState: function (stateObj) {
+        delete window.interop.state._previousState;
+        window.interop.state._previousState = __assign({}, window.interop.state);
+        window.interop.state = Object.assign(Object.assign(Object.assign({}, window.interop.state), stateObj), { _revision: (window.interop.state._revision + 1) });
+        //return this.state;		
+        window.interop.dotNet.invokeMethodAsync('SetState', window.interop.state);
+        return window.interop.state;
+        //fire change notifier
+    },
+    getDimensions: function () {
+        return {
+            width: window.innerWidth,
+            height: window.innerHeight
+        };
+    }
 };
-
-window.interop.getRenderArea = () => {
-	var renderArea = document.getElementById('renderArea');
-	if (renderArea) {
-		return {
-			width: renderArea.clientWidth,
-			height: renderArea.clientHeight
-		};
-	}
+window.interop.getRenderArea = function () {
+    var renderArea = document.getElementById('renderArea');
+    if (renderArea) {
+        return {
+            width: renderArea.clientWidth,
+            height: renderArea.clientHeight
+        };
+    }
 };
-window.interop.consoleLog = (textString) => {
-	window.console.log(textString);
-	return true;
+window.interop.consoleLog = function (textString) {
+    window.console.log(textString);
+    return true;
 };
-window.interop.hookDotNet = (dotNetObj) => {
-	window.interop.dotNet = dotNetObj;
+window.interop.hookDotNet = function (dotNetObj) {
+    window.interop.dotNet = dotNetObj;
 };
-
 function throwOnGLError(err, funcName, args) {
-	//@ts-ignore
-	throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
-};
-
+    //@ts-ignore
+    throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
+}
+;
 function logGLCall(functionName, args) {
-	console.log("gl." + functionName + "(" +
-		//@ts-ignore
-		WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
+    console.log("gl." + functionName + "(" +
+        //@ts-ignore
+        WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
 }
-
-const ColourValues = [
-	/*[255, 0, 0], */[0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255], /*[0, 0, 0],*/
-	[192, 64, 0], [64, 192, 0], [64, 192, 0], [192, 64, 0], [64, 0, 192], [192, 0, 64], [192, 192, , 64], [64, 192, 192], [192.64, 192], [64, 192, 64], [64, 192, 192], [192, 192, 64],
-	[128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0], [128, 0, 128], [0, 128, 128], [128, 128, 128],
-	[192, 0, 0], [0, 192, 0], [0, 0, 192], [192, 192, 0], [192, 0, 192], [0, 192, 192], [192, 192, 192],
-	[64, 0, 0], [0, 64, 0], [0, 0, 64], [64, 64, 0], [64, 0, 64], [0, 64, 64], [64, 64, 64],
-	[32, 0, 0], [0, 32, 0], [0, 0, 32], [32, 32, 0], [32, 0, 32], [0, 32, 32], [32, 32, 32],
-	[96, 0, 0], [0, 96, 0], [0, 0, 96], [96, 96, 0], [96, 0, 96], [0, 96, 96], [96, 96, 96],
-	[160, 0, 0], [0, 160, 0], [0, 0, 160], [160, 160, 0], [160, 0, 160], [0, 160, 160], [160, 160, 160],
-	[224, 0, 0], [0, 224, 0], [0, 0, 224], [224, 224, 0], [224, 0, 224], [0, 224, 224], [224, 224, 224]
+var ColourValues = [
+    /*[255, 0, 0], */ [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
+    [192, 64, 0], [64, 192, 0], [64, 192, 0], [192, 64, 0], [64, 0, 192], [192, 0, 64], [192, 192, , 64], [64, 192, 192], [192.64, 192], [64, 192, 64], [64, 192, 192], [192, 192, 64],
+    [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0], [128, 0, 128], [0, 128, 128], [128, 128, 128],
+    [192, 0, 0], [0, 192, 0], [0, 0, 192], [192, 192, 0], [192, 0, 192], [0, 192, 192], [192, 192, 192],
+    [64, 0, 0], [0, 64, 0], [0, 0, 64], [64, 64, 0], [64, 0, 64], [0, 64, 64], [64, 64, 64],
+    [32, 0, 0], [0, 32, 0], [0, 0, 32], [32, 32, 0], [32, 0, 32], [0, 32, 32], [32, 32, 32],
+    [96, 0, 0], [0, 96, 0], [0, 0, 96], [96, 96, 0], [96, 0, 96], [0, 96, 96], [96, 96, 96],
+    [160, 0, 0], [0, 160, 0], [0, 0, 160], [160, 160, 0], [160, 0, 160], [0, 160, 160], [160, 160, 160],
+    [224, 0, 0], [0, 224, 0], [0, 0, 224], [224, 224, 0], [224, 0, 224], [0, 224, 224], [224, 224, 224]
 ];
-
-window.interop.FlyTo = (longitude, latitude, zoom) => {
-	window.interop.deck.setProps({
-		initialViewState: {
-			longitude: longitude,
-			latitude: latitude,
-			zoom: (zoom > 9 ? zoom : 15),
-			bearing: 0,
-			pitch: 45,
-			transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
-			transitionDuration: 'auto'
-		}
-	})
-	return true;
-}
-
-window.interop.SetMapState = (...styles) => {
-	//@ts-ignore
-	var jim = window.interop.setState({ label: "Bpb", map: styles, layers: [] });
-	debugger;
-	console.log(jim);
-	return jim;
-}
-
-window.interop.InitDeckGL = (longitude, latitude, zoom) => {
-
-	const INITIAL_VIEW_STATE = {
-		latitude: latitude,
-		longitude: longitude,
-		zoom: zoom,
-		bearing: 0,
-		pitch: 45
-	};
-
-	mapboxgl.accessToken = 'pk.eyJ1IjoibWFyaWMxIiwiYSI6Ii0xdWs1TlUifQ.U56tiQG_kj88zNf_1PxHQw';// process.env.MapboxAccessToken; // eslint-disable-line
-
-	const map = new mapboxgl.Map({
-		container: 'map',
-		style: 'mapbox://styles/maric1/ckclqelzf0fo71ipirav7fckc',
-		interactive: false,
-		center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
-		zoom: INITIAL_VIEW_STATE.zoom,
-		bearing: INITIAL_VIEW_STATE.bearing,
-		pitch: INITIAL_VIEW_STATE.pitch
-	});
-
-	const deck = new Deck({
-		canvas: 'deck-canvas',
-		width: '100%',
-		height: '100%',
-		initialViewState: INITIAL_VIEW_STATE,
-		controller: true,
-		onWebGLInitialized: (gl) => {
-			gl = WebGLDebugUtils.makeDebugContext(gl, throwOnGLError, logGLCall);
-			window.deckGLContext = gl;
-		},
-		onViewStateChange: ({ viewState, interactionState, oldViewState }) => {
-			//@ts-ignore
-			map.jumpTo({
-				center: [viewState.longitude, viewState.latitude],
-				zoom: viewState.zoom,
-				bearing: viewState.bearing,
-				pitch: viewState.pitch
-			});
-			if (interactionState.isZooming) {
-				if (window.interop.state.layers.length >= 2) {
-					let newLayers = [...window.interop.state.layers]
-					newLayers[1] = generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64);
-					newLayers[window.interop.state.layers.length - 1] = generateNewTextLayer(viewState.zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
-					window.interop.setState({
-						layers: newLayers
-					})
-				}
-				else {
-					window.interop.setState({
-						layers: [window.interop.state.layers[0], generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64)] })
-				}
-				window.interop.deck.setProps({
-					layers: window.interop.state.layers
-				});
-			}
-		},
-		layers: [],
-		log: {
-			level: 1
-		},
-		getTooltip: (hv) => {
-			if (hv.object) {
-				switch (hv.layer.id) {
-					case ("column-layer"):
-						return `${hv.object.venuename}\r\n${hv.object.name} - ${hv.object.value}`;					
-				}
-				if (hv.layer.id.indexOf('piechart-layer') == 0) {
-					console.log(hv);
-					return "bob";
+window.interop.FlyTo = function (longitude, latitude, zoom) {
+    window.interop.deck.setProps({
+        initialViewState: {
+            longitude: longitude,
+            latitude: latitude,
+            zoom: (zoom > 9 ? zoom : 15),
+            bearing: 0,
+            pitch: 45,
+            transitionInterpolator: new deck_gl_1.FlyToInterpolator({ speed: 1.5 }),
+            transitionDuration: 'auto'
+        }
+    });
+    return true;
+};
+window.interop.SetMapState = function () {
+    var styles = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        styles[_i] = arguments[_i];
+    }
+    //@ts-ignore
+    window.interop.setState({ label: "Bpb", map: styles, layers: [] });
+};
+window.interop.InitDeckGL = function (longitude, latitude, zoom) {
+    var INITIAL_VIEW_STATE = {
+        latitude: latitude,
+        longitude: longitude,
+        zoom: zoom,
+        bearing: 0,
+        pitch: 45
+    };
+    mapboxgl.accessToken = 'pk.eyJ1IjoibWFyaWMxIiwiYSI6Ii0xdWs1TlUifQ.U56tiQG_kj88zNf_1PxHQw'; // process.env.MapboxAccessToken; // eslint-disable-line
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/maric1/ckclqelzf0fo71ipirav7fckc',
+        interactive: false,
+        center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
+        zoom: INITIAL_VIEW_STATE.zoom,
+        bearing: INITIAL_VIEW_STATE.bearing,
+        pitch: INITIAL_VIEW_STATE.pitch
+    });
+    var deck = new deck_gl_1.Deck({
+        canvas: 'deck-canvas',
+        width: '100%',
+        height: '100%',
+        initialViewState: INITIAL_VIEW_STATE,
+        controller: true,
+        onWebGLInitialized: function (gl) {
+            // @ts-ignore
+            gl = WebGLDebugUtils.makeDebugContext(gl, throwOnGLError, logGLCall);
+            window.deckGLContext = gl;
+        },
+        onViewStateChange: function (_a) {
+            var viewState = _a.viewState, interactionState = _a.interactionState, oldViewState = _a.oldViewState;
+            //@ts-ignore
+            map.jumpTo({
+                center: [viewState.longitude, viewState.latitude],
+                zoom: viewState.zoom,
+                bearing: viewState.bearing,
+                pitch: viewState.pitch
+            });
+            if (interactionState.isZooming) {
+                if (window.interop.state.layers.length >= 2) {
+                    var newLayers = __spreadArray([], window.interop.state.layers, true);
+                    newLayers[1] = generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64);
+                    newLayers[window.interop.state.layers.length - 1] = generateNewTextLayer(viewState.zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
+                    window.interop.setState({
+                        layers: newLayers
+                    });
                 }
-			}
-		}
-	});
-
-	const colourMap = ((window.interop.state.map).map(a => a.styles.map(b => b.name))).flat()
-		.filter((value, index, self) => self.indexOf(value) === index).map((a, b) => { return { name: a, colour: ColourValues[b] } });
-
-	window.interop.setState({ colourMap: colourMap });
-
-	window.interop.currentZoom = zoom;
-	window.interop.mapLoaded = true;
-	window.interop.map = map;
-	window.interop.deck = deck;
-	return true;
+                else {
+                    window.interop.setState({
+                        layers: [window.interop.state.layers[0], generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64)]
+                    });
+                }
+                window.interop.deck.setProps({
+                    layers: window.interop.state.layers
+                });
+            }
+        },
+        layers: [],
+        log: {
+            level: 1
+        },
+        getTooltip: function (hv) {
+            if (hv.object) {
+                switch (hv.layer.id) {
+                    case ("column-layer"):
+                        return "".concat(hv.object.venuename, "\r\n").concat(hv.object.name, " - ").concat(hv.object.value);
+                }
+                if (hv.layer.id.indexOf('piechart-layer') == 0) {
+                    var labelSet = hv.object.beersBrewed.map(function (bb) { return "".concat(bb.count, "\t").concat(bb.name); });
+                    return labelSet.join('\r\n');
+                }
+            }
+        }
+    });
+    var colourMap = ((window.interop.state.map).map(function (a) { return a.styles.map(function (b) { return b.name; }); })).flat()
+        .filter(function (value, index, self) { return self.indexOf(value) === index; }).map(function (a, b) { return { name: a, colour: ColourValues[b] }; });
+    window.interop.setState({ colourMap: colourMap });
+    window.interop.currentZoom = zoom;
+    window.interop.mapLoaded = true;
+    window.interop.map = map;
+    window.interop.deck = deck;
+    return true;
+};
+window.interop.AddColumnChartPoint = function (zoom) {
+    if (window.interop.mapLoaded) {
+        var scale_1 = 20;
+        var mapVals = window.interop.state.map;
+        var columnData = mapVals.map(function (a) {
+            return a.styles.map(function (b) {
+                var _a;
+                return {
+                    centroid: [a.location.x, a.location.y, b.height * scale_1],
+                    value: b.count,
+                    name: b.name,
+                    colour: (_a = window.interop.state.colourMap.find(function (c) { return c.name === b.name; })) === null || _a === void 0 ? void 0 : _a.colour,
+                    venue: a.venue,
+                    venuename: a.name
+                };
+            });
+        });
+        var flatData = columnData.flat();
+        window.interop.setState({
+            layers: [new deck_gl_1.ColumnLayer({
+                    id: 'column-layer',
+                    data: flatData,
+                    diskResolution: 48,
+                    radius: 50,
+                    extruded: true,
+                    autoHighlight: true,
+                    pickable: true,
+                    elevationScale: scale_1,
+                    getPosition: function (d) { return d.centroid; },
+                    getFillColor: function (d) { return __spreadArray(__spreadArray([], (d.colour ? d.colour : [128, 128, 128]), true), [192], false); },
+                    getLineColor: [0, 0, 0],
+                    getElevation: function (d) { return d.value; },
+                    onClick: function (a) {
+                        window.interop.dotNet.invokeMethodAsync('GetBrewersByVenue', a.object.venue, a.object.name)
+                            .then(function (result) {
+                            window.interop.setState({
+                                brewerMap: result
+                            });
+                            var arcLayer = new deck_gl_1.ArcLayer({
+                                id: 'arc-layer',
+                                data: result,
+                                pickable: false,
+                                getWidth: 4,
+                                getSourcePosition: [a.object.centroid[0], a.object.centroid[1]],
+                                getTargetPosition: function (d) { return [d.location.x, d.location.y]; },
+                                getSourceColor: a.object.colour,
+                                getTargetColor: a.object.colour
+                            });
+                            var pieChartLayers = result.map(function (item) { return new deck_gl_1.SimpleMeshLayer({
+                                id: 'piechart-layer-' + item.name,
+                                data: [item],
+                                texture: new Promise(function (resolve, reject) {
+                                    var _a, _b;
+                                    var dataArray = [];
+                                    item.beersBrewed.forEach(function (bb, i) {
+                                        for (var j = 0; j < bb.count; j++) {
+                                            dataArray.push(ColourValues[i]);
+                                        }
+                                    });
+                                    var texture = new core_1.Texture2D(window.deckGLContext, {
+                                        width: item.beersBrewed.flatMap(function (a) { return a.count; }).reduce(function (a, b) { return a + b; }, 0),
+                                        height: 1,
+                                        format: window.deckGLContext.RGB,
+                                        data: new Uint8Array(dataArray.flat()),
+                                        parameters: (_a = {},
+                                            _a[window.deckGLContext.TEXTURE_MAG_FILTER] = window.deckGLContext.NEAREST,
+                                            _a[window.deckGLContext.TEXTURE_MIN_FILTER] = window.deckGLContext.NEAREST,
+                                            _a),
+                                        pixelStore: (_b = {},
+                                            _b[window.deckGLContext.UNPACK_FLIP_Y_WEBGL] = true,
+                                            _b),
+                                        mipmaps: true
+                                    });
+                                    resolve(texture);
+                                }),
+                                autoHighlight: true,
+                                pickable: true,
+                                mesh: new core_1.CylinderGeometry({ radius: 5, height: 1, topCap: true, nradial: 48, bottomCap: false }),
+                                sizeScale: 16,
+                                getPosition: function (d) { return [d.location.x, d.location.y]; },
+                                getColor: function (d) { return [255, 214, 0]; },
+                                getOrientation: function (d) { return [0, 0, 270]; }
+                            }); });
+                            var pieLabelLayer = generateNewTextLayer(zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
+                            window.interop.setState({
+                                layers: [window.interop.state.layers[0], window.interop.state.layers[1], arcLayer, pieChartLayers, pieLabelLayer].flat()
+                            });
+                            window.interop.deck.setProps({
+                                layers: window.interop.state.layers
+                            });
+                        });
+                    }
+                    //onHover: ({x, y, object}) => setTooltip(x, y, object ? `${object.name}\n${object.address}` : null)
+                }), generateNewTextLayer(zoom, window.interop.state.map, 'text-layer', 64)]
+        });
+        window.interop.deck.setProps({
+            layers: window.interop.state.layers
+        });
+        return true;
+    }
+    return false;
+};
+function generateNewTextLayer(zoom, dataSet, layerName, offset) {
+    var locationData = dataSet.map(function (a) {
+        return { centroid: [a.location.x, a.location.y], name: a.name };
+    });
+    var fontSize = (zoom * 3) - 10;
+    if (zoom >= 14) {
+        fontSize = 32;
+    }
+    console.log(fontSize);
+    return new deck_gl_1.TextLayer({
+        id: layerName + '-' + zoom,
+        data: locationData,
+        pickable: true,
+        billboard: true,
+        getPosition: function (d) { return d.centroid; },
+        getText: function (d) { return d.name; },
+        getSize: fontSize,
+        getAngle: 0,
+        getTextAnchor: 'middle',
+        getAlignmentBaseline: 'center',
+        fontFamily: "Helvetica Neue",
+        getPixelOffset: function (a, b) {
+            var pixelVal = pixelValue(a.centroid[1], offset, zoom);
+            //console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
+            return [0, pixelVal];
+        }
+    });
 }
-
-window.interop.AddColumnChartPoint = (zoom) => {
-	if (window.interop.mapLoaded) {
-
-		const scale = 20;
-
-		var mapVals = window.interop.state.map;
-		var columnData = mapVals.map((a) => {
-			return a.styles.map(b => {
-				return {
-					centroid: [a.location.x, a.location.y, b.height * scale],
-					value: b.count,
-					name: b.name,
-					colour: window.interop.state.colourMap.find(c => c.name === b.name)?.colour,
-					venue: a.venue,
-					venuename: a.name
-				}
-			})
-		});
-		var flatData = columnData.flat();
-
-		window.interop.setState({
-			layers: [new ColumnLayer({
-				id: 'column-layer',
-				data: flatData,
-				diskResolution: 48,
-				radius: 50,
-				extruded: true,
-				autoHighlight: true,
-				pickable: true,
-				elevationScale: scale,
-				getPosition: d => d.centroid,
-				getFillColor: d => [...(d.colour ? d.colour : [128, 128, 128]), 192],
-				getLineColor: [0, 0, 0],
-				getElevation: d => d.value,
-				onClick: (a) => {
-					window.interop.dotNet.invokeMethodAsync('GetBrewersByVenue', a.object.venue, a.object.name)
-						.then((result) => {
-							window.interop.setState({
-								brewerMap: result
-							})
-								
-							const arcLayer = new ArcLayer({
-								id: 'arc-layer',
-								data: result,
-								pickable: false,
-								getWidth: 4,
-								getSourcePosition: [a.object.centroid[0], a.object.centroid[1]],
-								getTargetPosition: d => [d.location.x, d.location.y],
-								getSourceColor: a.object.colour,//d => [255, 214, 0],
-								getTargetColor: a.object.colour,
-							});
-
-							const pieChartLayers = result.map(item => new SimpleMeshLayer({
-								id: 'piechart-layer-' + item.name,
-								data: [item],
-								texture: new Promise((resolve, reject) => {
-									let dataArray = [];
-									item.beersBrewed.forEach((bb, i) => {
-										for (var j = 0; j < bb.count; j++) {
-											dataArray.push(ColourValues[i])
-										}
-									});
-									const texture = new Texture2D(window.deckGLContext, {
-										width: item.beersBrewed.flatMap(a => a.count).reduce((a, b) => a + b, 0),
-										height: 1,
-										format: window.deckGLContext.RGB,
-										data: new Uint8Array(dataArray.flat()),
-										parameters: {
-											[window.deckGLContext.TEXTURE_MAG_FILTER]: window.deckGLContext.NEAREST,
-											[window.deckGLContext.TEXTURE_MIN_FILTER]: window.deckGLContext.NEAREST
-										},
-										pixelStore: {
-											[window.deckGLContext.UNPACK_FLIP_Y_WEBGL]: true
-										},
-										mipmaps: true
-									});
-									resolve(texture);
-								}),
-								
-								mesh: new CylinderGeometry({ radius: 5, height: 1, topCap: true, nradial: 48, bottomCap: false }),
-								sizeScale: 16,
-								getPosition: d => [d.location.x, d.location.y],
-								getColor: d => [255, 214, 0],
-								getOrientation: d => [0, 0, 270]
-							}))
-
-
-
-							const pieLabelLayer = generateNewTextLayer(zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
-
-							window.interop.setState({
-								layers: [window.interop.state.layers[0], window.interop.state.layers[1], arcLayer, pieChartLayers, pieLabelLayer].flat()
-							})
-							window.interop.deck.setProps({
-								layers: window.interop.state.layers
-							});
-							//window.interop.deck.update();
-
-						});
-				}
-				//onHover: ({x, y, object}) => setTooltip(x, y, object ? `${object.name}\n${object.address}` : null)
-			}), generateNewTextLayer(zoom, window.interop.state.map, 'text-layer', 64)]
-		});
-
-		window.interop.deck.setProps({
-			layers: window.interop.state.layers
-		});
-		return true;
-	}
-	return false;
-}
-
-
-function generateNewTextLayer(zoom, dataSet, layerName, offset ) {
-
-	var locationData = dataSet.map((a) => {
-		return { centroid: [a.location.x, a.location.y], name: a.name }
-	});
-
-	let fontSize = (zoom * 3) - 10;
-	
-	if (zoom >= 14) {
-		fontSize = 32;
-	}
-	console.log(fontSize);
-	return new TextLayer({
-		id: layerName+'-' + zoom,
-		data: locationData,
-		pickable: true,
-		billboard: true,
-		getPosition: d => d.centroid,
-		getText: d => d.name,
-		getSize: fontSize,
-		getAngle: 0,
-		getTextAnchor: 'middle',
-		getAlignmentBaseline: 'center',
-		fontFamily: "Montserrat",
-		getPixelOffset: (a, b) => {
-			var pixelVal = pixelValue(a.centroid[1], offset, zoom);
-			//console.log(`Zoom is ${zoom}  -  offset is ${pixelVal}`);
-			return [0, pixelVal];
-		}
-	});
-}
-
 function pixelValue(latitude, meters, zoomLevel) {
-	const mapPixels = meters / (78271.484 / 2 ** zoomLevel) / Math.cos((latitude * Math.PI) / 180);
-	const screenPixel = mapPixels * Math.floor(window.devicePixelRatio);
-	return screenPixel;
+    var mapPixels = meters / (78271.484 / Math.pow(2, zoomLevel)) / Math.cos((latitude * Math.PI) / 180);
+    var screenPixel = mapPixels * Math.floor(window.devicePixelRatio);
+    return screenPixel;
 }
-
