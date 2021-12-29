@@ -105,7 +105,7 @@ window.interop = {
             longitude: longitude,
             zoom: zoom,
             bearing: 0,
-            pitch: 45
+            pitch: 80
         };
         mapboxgl.accessToken = 'pk.eyJ1IjoibWFyaWMxIiwiYSI6Ii0xdWs1TlUifQ.U56tiQG_kj88zNf_1PxHQw'; // process.env.MapboxAccessToken; // eslint-disable-line
         var map = new mapboxgl.Map({
@@ -117,6 +117,27 @@ window.interop = {
             bearing: INITIAL_VIEW_STATE.bearing,
             pitch: INITIAL_VIEW_STATE.pitch
         });
+        map.on('load', function () {
+            map.addSource('mapbox-dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                'tileSize': 512,
+                'maxzoom': 14
+            });
+            // add the DEM source as a terrain layer with exaggerated height
+            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+            // add a sky layer that will show when the map is highly pitched
+            map.addLayer({
+                'id': 'sky',
+                'type': 'sky',
+                'paint': {
+                    'sky-type': 'atmosphere',
+                    'sky-atmosphere-sun': [0.0, 0.0],
+                    'sky-atmosphere-sun-intensity': 15
+                }
+            });
+        });
+        map.addControl(new mapboxgl.FullscreenControl());
         var deck = new deck_gl_1.Deck({
             canvas: 'deck-canvas',
             width: '100%',
