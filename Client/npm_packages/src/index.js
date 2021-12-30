@@ -117,6 +117,17 @@ window.interop = {
             bearing: INITIAL_VIEW_STATE.bearing,
             pitch: INITIAL_VIEW_STATE.pitch
         });
+        var layerList = document.getElementById('menu');
+        var inputs = layerList.getElementsByTagName('input');
+        // @ts-ignore
+        for (var _i = 0, inputs_1 = inputs; _i < inputs_1.length; _i++) {
+            var input = inputs_1[_i];
+            input.onclick = function (layer) {
+                // @ts-ignore
+                var layerId = layer.target.id;
+                map.setStyle('mapbox://styles/mapbox/' + layerId);
+            };
+        }
         map.on('load', function () {
             map.addSource('mapbox-dem', {
                 'type': 'raster-dem',

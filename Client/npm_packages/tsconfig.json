@@ -5,7 +5,7 @@
     "removeComments": false,
     "sourceMap": true,
     "target": "ES2015",
-    "lib": [ "ES2015", "dom", "esnext.asynciterable" ],
+    "lib": [ "ES2015", "dom", "esnext.asynciterable", "DOM.Iterable" ],
     "moduleResolution": "Node"
   },
   "include": [ "src/*.ts" ],

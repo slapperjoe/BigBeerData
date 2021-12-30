@@ -96,6 +96,17 @@ window.interop = {
 			pitch: INITIAL_VIEW_STATE.pitch
 		});
 
+		const layerList = document.getElementById('menu');
+		const inputs = layerList.getElementsByTagName('input');
+		// @ts-ignore
+		for (const input of inputs) {
+			input.onclick = (layer) => {
+				// @ts-ignore
+				const layerId = layer.target.id;
+				map.setStyle('mapbox://styles/mapbox/' + layerId);
+			};
+		}
+
 		map.on('load', () => {
 			map.addSource('mapbox-dem', {
 				'type': 'raster-dem',
