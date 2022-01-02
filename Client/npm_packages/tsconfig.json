@@ -6,7 +6,11 @@
     "sourceMap": true,
     "target": "ES2015",
     "lib": [ "ES2015", "dom", "esnext.asynciterable", "DOM.Iterable" ],
-    "moduleResolution": "Node"
+    "moduleResolution": "Node",
+    "outDir": "../wwwroot/js",
+    "module": "es6",
+    "jsx": "react",
+    "allowJs": true,
   },
   "include": [ "src/*.ts" ],
   "exclude": [

@@ -89,7 +89,7 @@ window.interop = {
 		const map = new mapboxgl.Map({
 			container: 'map',
 			style: 'mapbox://styles/maric1/ckclqelzf0fo71ipirav7fckc',
-			interactive: false,
+			interactive: true,
 			center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
 			zoom: INITIAL_VIEW_STATE.zoom,
 			bearing: INITIAL_VIEW_STATE.bearing,
@@ -112,7 +112,7 @@ window.interop = {
 				'type': 'raster-dem',
 				'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
 				'tileSize': 512,
-				'maxzoom': 14
+				'maxzoom': 25
 			});
 			// add the DEM source as a terrain layer with exaggerated height
 			map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
@@ -152,7 +152,7 @@ window.interop = {
 				});
 				if (interactionState.isZooming) {
 					let newLayers = [];
-					if (window.interop.deck.props.layers.length >= 2) {
+					if (window.interop.deck.props.layers.length > 2) {
 						newLayers = [...window.interop.deck.props.layers]
 						newLayers[1] = generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64);
 						newLayers[window.interop.deck.props.layers.length - 1] = generateNewTextLayer(viewState.zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
@@ -358,7 +358,7 @@ function generateNewTextLayer(zoom, dataSet, layerName, offset ) {
 	if (zoom >= 14) {
 		fontSize = 32;
 	}
-	console.log(fontSize);
+	//console.log(fontSize);
 	return new TextLayer({
 		id: layerName+'-' + zoom,
 		data: locationData,

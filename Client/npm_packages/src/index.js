@@ -111,7 +111,7 @@ window.interop = {
         var map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/maric1/ckclqelzf0fo71ipirav7fckc',
-            interactive: false,
+            interactive: true,
             center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
             zoom: INITIAL_VIEW_STATE.zoom,
             bearing: INITIAL_VIEW_STATE.bearing,
@@ -133,7 +133,7 @@ window.interop = {
                 'type': 'raster-dem',
                 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
                 'tileSize': 512,
-                'maxzoom': 14
+                'maxzoom': 25
             });
             // add the DEM source as a terrain layer with exaggerated height
             map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
@@ -169,26 +169,26 @@ window.interop = {
                     bearing: viewState.bearing,
                     pitch: viewState.pitch
                 });
-                if (interactionState.isZooming) {
-                    var newLayers = [];
-                    if (window.interop.deck.props.layers.length >= 2) {
-                        newLayers = __spreadArray([], window.interop.deck.props.layers, true);
-                        newLayers[1] = generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64);
-                        newLayers[window.interop.deck.props.layers.length - 1] = generateNewTextLayer(viewState.zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
-                        window.interop.setState({
-                            viewingVenue: true
-                        });
-                    }
-                    else {
-                        newLayers = [window.interop.deck.props.layers[0], generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64)],
-                            window.interop.setState({
-                                viewingVenue: true
-                            });
-                    }
-                    window.interop.deck.setProps({
-                        layers: newLayers
-                    });
-                }
+                //if (interactionState.isZooming) {
+                //	let newLayers = [];
+                //	if (window.interop.deck.props.layers.length > 2) {
+                //		newLayers = [...window.interop.deck.props.layers]
+                //		newLayers[1] = generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64);
+                //		newLayers[window.interop.deck.props.layers.length - 1] = generateNewTextLayer(viewState.zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
+                //		window.interop.setState({
+                //			viewingVenue: true
+                //		})
+                //	}
+                //	else {
+                //		newLayers = [window.interop.deck.props.layers[0], generateNewTextLayer(viewState.zoom, window.interop.state.map, 'text-layer', 64)],
+                //		window.interop.setState({
+                //			viewingVenue: true
+                //		})
+                //	}
+                //	window.interop.deck.setProps({
+                //		layers: newLayers
+                //	});
+                //}
             },
             layers: [],
             log: {
@@ -363,7 +363,7 @@ function generateNewTextLayer(zoom, dataSet, layerName, offset) {
     if (zoom >= 14) {
         fontSize = 32;
     }
-    console.log(fontSize);
+    //console.log(fontSize);
     return new deck_gl_1.TextLayer({
         id: layerName + '-' + zoom,
         data: locationData,
