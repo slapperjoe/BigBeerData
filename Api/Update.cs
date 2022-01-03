@@ -168,9 +168,9 @@ namespace BigBeerData.Functions
             }
             await sw.WriteLineAsync("Update complete.");
 
-            resp.ContentType = "text/plain";
+            //resp.ContentType = "text/plain";
             await sw.FlushAsync();
-            resp.StatusCode = (int)HttpStatusCode.OK;
+            //resp.StatusCode = (int)HttpStatusCode.OK;
             throw new Exception("Complete");
 
             //return new OkObjectResult(result.ToString());
