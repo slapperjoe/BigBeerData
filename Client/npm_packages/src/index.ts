@@ -2,6 +2,10 @@
 import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl"
 import { Texture2D, CylinderGeometry } from "@luma.gl/core"
 
+window.addEventListener('resize', function () {
+	window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
+});
+
 window.interop = {
 	dotNet: null,
 	deck: null,
@@ -96,38 +100,38 @@ window.interop = {
 			pitch: INITIAL_VIEW_STATE.pitch
 		});
 
-		const layerList = document.getElementById('menu');
-		const inputs = layerList.getElementsByTagName('input');
-		// @ts-ignore
-		for (const input of inputs) {
-			input.onclick = (layer) => {
-				// @ts-ignore
-				const layerId = layer.target.id;
-				map.setStyle('mapbox://styles/mapbox/' + layerId);
-			};
-		}
+		//const layerList = document.getElementById('menu');
+		//const inputs = layerList.getElementsByTagName('input');
+		//// @ts-ignore
+		//for (const input of inputs) {
+		//	input.onclick = (layer) => {
+		//		// @ts-ignore
+		//		const layerId = layer.target.id;
+		//		map.setStyle('mapbox://styles/mapbox/' + layerId);
+		//	};
+		//}
 
-		map.on('load', () => {
-			map.addSource('mapbox-dem', {
-				'type': 'raster-dem',
-				'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-				'tileSize': 512,
-				'maxzoom': 25
-			});
-			// add the DEM source as a terrain layer with exaggerated height
-			map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+		//map.on('load', () => {
+		//	map.addSource('mapbox-dem', {
+		//		'type': 'raster-dem',
+		//		'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+		//		'tileSize': 512,
+		//		'maxzoom': 25
+		//	});
+		//	// add the DEM source as a terrain layer with exaggerated height
+		//	map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
 
-			// add a sky layer that will show when the map is highly pitched
-			map.addLayer({
-				'id': 'sky',
-				'type': 'sky',
-				'paint': {
-					'sky-type': 'atmosphere',
-					'sky-atmosphere-sun': [0.0, 0.0],
-					'sky-atmosphere-sun-intensity': 15
-				}
-			});
-		});
+		//	// add a sky layer that will show when the map is highly pitched
+		//	map.addLayer({
+		//		'id': 'sky',
+		//		'type': 'sky',
+		//		'paint': {
+		//			'sky-type': 'atmosphere',
+		//			'sky-atmosphere-sun': [0.0, 0.0],
+		//			'sky-atmosphere-sun-intensity': 15
+		//		}
+		//	});
+		//});
 
 		map.addControl(new mapboxgl.FullscreenControl());
 
@@ -209,7 +213,6 @@ window.interop = {
 		if (window.interop.state.mapLoaded) {
 
 			const scale = 20;
-			debugger;
 			var mapVals = window.interop.state.map;
 			var columnData = mapVals.map((a) => {
 				return a.styles.map(b => {

@@ -13,7 +13,7 @@
 <div class="control-section" style="height: 100%;">
     @if (parent.loaded)
     {
-        <div id="menu">
+@*        <div id="menu">
             <input id="satellite-v9" type="radio" name="rtoggle" value="satellite" checked="checked">
             <!-- See a list of Mapbox-hosted public styles at -->
             <!-- https://docs.mapbox.com/api/maps/styles/#mapbox-styles -->
@@ -26,10 +26,10 @@
             <label for="streets-v11">streets</label>
             <input id="outdoors-v11" type="radio" name="rtoggle" value="outdoors">
             <label for="outdoors-v11">outdoors</label>
-        </div>
-        <div id="mapContainer" style="height: @(MainHeight.ToPixel())">
-            <div id="map" style="height: @(MainHeight.ToPixel())"></div>
-            <canvas id="deck-canvas" style="height: @(MainHeight.ToPixel())"></canvas>
+        </div>*@
+        <div @ref="mapContainer" id="mapContainer" style="height: @(MainHeight.ToPixel())">
+            <div id="map" style="height: 100%"></div>
+            <canvas id="deck-canvas" style="height: 100%"></canvas>
         </div>
     }
     else
@@ -46,6 +46,8 @@
 
     [Parameter]
     public Client.Shared.MainLayout parent { get; set; }
+
+    public ElementReference mapContainer;
 
     public LocationStyle[]? locationStyles;
     public GeoBounds? bounds;
@@ -64,14 +66,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await GetMainArea();
+        await GetMainArea(false);
         locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>("/api/location/1/style");
         bounds = await Http.GetFromJsonAsync<GeoBounds>("/api/geo/bounds/1");
         parent.setLoaded(true);
     }
 
 
-    public async Task GetMainArea()
+    [JSInvokable]
+    public async Task GetMainArea(bool redraw)
     {
         var dimension = await Service.GetDimensions();
         Height = (dimension.Height - 56); //remove header
@@ -79,6 +82,10 @@
         Width = dimension.Width - 170;
         WSVGPad = Width / 2 - 50;
         HSVGPad = Height / 2 - 50;
+        if (redraw)
+        {
+            StateHasChanged();
+        }
     }
 
     public async Task LocationUpdated(int id)
@@ -86,7 +93,7 @@
         parent.loaded = false;
         await Task.Run(async () =>
         {
-            await GetMainArea();
+            await GetMainArea(false);
             locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>($"api/location/{id}/style");
             bounds = await Http.GetFromJsonAsync<GeoBounds>($"api/geo/bounds/{id}");
             parent.loaded = true;
