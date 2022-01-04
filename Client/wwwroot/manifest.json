@@ -1,6 +1,6 @@
 {
-  "name": "BigBeerData",
-  "short_name": "BigBeerData",
+  "name": "On the beers",
+  "short_name": "Onthebeers",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",

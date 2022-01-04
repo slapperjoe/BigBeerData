@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Web;
 using BigBeerData.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -40,6 +41,7 @@ namespace Api.Locations
 							[HttpTrigger(AuthorizationLevel.Function, "get", Route = "Location/{id}/{style}/brewers")]
 			HttpRequest req, long id, string style)
 		{
+			style = HttpUtility.UrlDecode(style);
 			_logger.LogDebug("Location Brewer Styles called id: {id}, style: {style}", id, style);
 			
 			var timeCutoff = DateTime.Now.AddDays(-30);

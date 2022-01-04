@@ -5,6 +5,7 @@
 @using BigBeerData.Shared
 @using System.Net.Http
 @using System.Threading
+@using System.Web
 @inject HttpClient Http
 @inject BrowserService Service
 
@@ -143,8 +144,11 @@
     [JSInvokable("GetBrewersByVenue")]
     public async Task<BrewerResult[]> GetBrewersByVenue(int venue, string style)
     {
-        BrewerResult[]? results = await Http.GetFromJsonAsync<BrewerResult[]>($"api/location/{venue}/{style}/brewers");
+        
+        BrewerResult[]? results = await Http.GetFromJsonAsync<BrewerResult[]>($"api/location/{venue}/{HttpUtility.UrlEncode(style)}/brewers");
         return results ?? new BrewerResult[0];
+
+        
 
         //var mock = await mockRepo.GetMockedBrewerResults();
         //return mock;

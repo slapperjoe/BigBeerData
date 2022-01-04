@@ -389,7 +389,7 @@ function pixelValue(latitude, meters, zoomLevel) {
 }
 
 function createLabelRow(bb) {
-	return `<tr><td><span style="font-size: 150%; width: 30px; color: rgba(${bb.color[0]},${bb.color[1]},${bb.color[2]}, 1);">&#8226;</span></td><td>${bb.name}</td><td>${bb.count}</td></tr>`
+	return `<tr><td><span style="font-size: 150%; width: 30px; color: rgba(${bb.color[0]},${bb.color[1]},${bb.color[2]}, 1);">&#8226;</span></td><td>${bb.name}</td><td>&nbsp;${bb.count}</td></tr>`
 }
 
 declare global {
