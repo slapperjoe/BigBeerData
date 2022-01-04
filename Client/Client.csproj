@@ -17,10 +17,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <_ContentIncludedByDefault Remove="wwwroot\css\app.css" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="npm_packages\src\interfaces.js" />
     <Content Include="npm_packages\src\interfaces.js.map" />
     <Content Include="npm_packages\src\interfaces.ts" />
