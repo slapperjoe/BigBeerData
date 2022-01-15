@@ -6,6 +6,8 @@ import { Model, Geometry, CubeGeometry, CylinderGeometry } from '@luma.gl/core';
 
 import { GL } from '@luma.gl/constants';
 
+import { StateObject } from './index'
+
 
 //import vs from 'raw-loader!./pie.vs.glsl';
 //import ps from 'raw-loader!./pie.ps.glsl';
@@ -146,3 +148,25 @@ export module LayerExtensions {
 		static layerName = 'PieScatterplotLayer';
 	}
 }
+
+declare global {
+	interface Window {
+		interop: {
+			dotNet: any;
+			deck: any;
+			mapDiv: any;
+			state: StateObject;
+			setState: (a: {}) => void;
+			AddColumnChartPoint: (a: number) => void;
+			InitDeckGL: (longitude, latitude, zoom) => boolean;
+			FlyTo: (longitude, latitude, zoom) => void;
+			SetMapState: (a: {}) => void;
+			getDimensions: () => {};
+			getRenderArea: () => {};
+			hookDotNet: (a: any) => void;
+			consoleLog: (a: string) => boolean;
+		};
+		deckGLContext: any;
+	}
+}
+

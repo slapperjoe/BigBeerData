@@ -5,7 +5,7 @@
     "removeComments": false,
     "sourceMap": true,
     "target": "ES2015",
-    "lib": [ "ES2019", "dom", "esnext.asynciterable", "DOM.Iterable" ],
+    "lib": [ "ES2019", "dom", "esnext.asynciterable", "DOM.Iterable", "ES2019.Array" ],
     "moduleResolution": "Node",
     "outDir": "../wwwroot/js",
     "module": "es6",

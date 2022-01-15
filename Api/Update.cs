@@ -6,10 +6,12 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using BigBeerData.Shared;
 using BigBeerData.Shared.Utils;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -30,11 +32,14 @@ namespace BigBeerData.Functions
 		const int MAX_REQUESTS = 100;
 		private readonly BigBeerContext _context;
 
+		private readonly string _connectionString;
+
 		public Update(BigBeerContext context, IHttpClientFactory httpClientFactory, ILogger<Update> log)
 		{
 			this.httpClientFactory = httpClientFactory;
 			_logger = log;
 			_context = context;
+			_connectionString = _context.Database.GetDbConnection().ConnectionString;
 		}
 
 		[FunctionName("Update")]
@@ -42,138 +47,150 @@ namespace BigBeerData.Functions
 		[OpenApiOperation(operationId: "Run", tags: new[] { "UpdateDB" })]
 		[OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
 		[OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
-		public async Task Run(
-						[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
+		public async Task<HttpResponseMessage> Run(
+				[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
 						HttpRequest req)
 		{
-			// string name = req.Query["name"];
-			// string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-			var client = httpClientFactory.CreateClient("BeerBot");
 
-			List<Checkin> t;
-			var counter = 0;
-			var alreadyAddedToDatabase = false;
-			var newGet = false;
-
-			var result = new StringBuilder();
-			var resp = req.HttpContext.Response;
-			StreamWriter sw = new StreamWriter(resp.Body);
-			await sw.WriteLineAsync("Starting Data Scrape.");
-			List<Establishment> establishments = _context.Establishments.Include(i => i.Checkins).ToList();
-
-			foreach (var establishment in establishments)
+			var features = req.HttpContext.Features.Get<IHttpBodyControlFeature>();
+			if (features != null)
 			{
-				t = null;
+				features.AllowSynchronousIO = true;
+			}
 
-				newGet = !establishment.Checkins.Any();
+			var response = new HttpResponseMessage
+			{
+				Content = new PushStreamContent(new Func<Stream, HttpContent, TransportContext, Task>(RunUpdate), "text/event-stream")
+			};
+			response.Headers.TransferEncodingChunked = true;
 
-				var updateTime = DateTime.Now;
+			return response;
 
-				if (!establishment.LastCheckinUpdate.HasValue ||
-								establishment.LastCheckinUpdate.Value.Date < updateTime.Date)
+		}
+
+		public async Task RunUpdate(Stream stream, HttpContent content, TransportContext transContext)
+		{
+			var optionsBuilder = new DbContextOptionsBuilder<BigBeerContext>();
+			optionsBuilder.UseSqlServer(_connectionString);
+
+			using (var dbContext = new BigBeerContext(optionsBuilder.Options))
+			{
+				var writeStream = new StreamWriter(stream) { AutoFlush = true };
+				var client = httpClientFactory.CreateClient("BeerBot");
+
+				List<Checkin> t;
+				var counter = 0;
+				var alreadyAddedToDatabase = false;
+				var newGet = false;
+
+				await writeStream.WriteLineAsync("Starting Data Scrape.");
+				List<Establishment> establishments = dbContext.Establishments.Include(i => i.Checkins).ToList();
+
+				foreach (var establishment in establishments)
 				{
-					establishment.LastCheckinUpdate = updateTime;
-					_context.Establishments.Update(establishment);
-					_context.SaveChanges();
+					t = null;
 
-					//get newest	
-					await sw.WriteLineAsync($"Looking for new beers in {establishment.EstablishmentName}");
-					t = await CheckinsGet(establishment.EstablishmentId, client, sw);
-				}
-				else
-				{
-					await sw.WriteLineAsync($"Already searched today for beers in {establishment.EstablishmentName}");
-				}
+					newGet = !establishment.Checkins.Any();
 
-				counter++;
+					var updateTime = DateTime.Now;
 
-				try
-				{
-					if (t != null)
+					if (!establishment.LastCheckinUpdate.HasValue ||
+									establishment.LastCheckinUpdate.Value.Date < updateTime.Date)
 					{
-						//process and keep getting new unstored
-						alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
-						while (!alreadyAddedToDatabase && counter < MAX_REQUESTS)
-						{
-							var newMax = t.OrderByDescending(a => a.CheckinTime).Last().CheckinTime;
+						establishment.LastCheckinUpdate = updateTime;
+						dbContext.Establishments.Update(establishment);
+						dbContext.SaveChanges();
 
-							await sw.WriteLineAsync($"Looking for less new beers in {establishment.EstablishmentName}");
-
-							t = await CheckinsGet(establishment.EstablishmentId, client, sw);
-							counter++;
-							try
-							{
-								alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
-							}
-							catch (Exception e)
-							{
-								UpdateEstablishment(establishment, e);
-								_context.Establishments.Update(establishment);
-								_context.SaveChanges();
-								await sw.WriteLineAsync($"Updating Establishment {e}");
-								counter = MAX_REQUESTS;
-							}
-						}
+						//get newest	
+						await writeStream.WriteLineAsync($"Looking for new beers in {establishment.EstablishmentName}");
+						t = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
+					}
+					else
+					{
+						await writeStream.WriteLineAsync($"Already searched today for beers in {establishment.EstablishmentName}");
 					}
 
-					//get older
-					if (counter < MAX_REQUESTS && !newGet && !establishment.MaxedCheckinHistory)
+					counter++;
+
+					try
 					{
-						t = await CheckinsGet(establishment.EstablishmentId, client, sw);
-						counter++;
-						try
+						if (t != null)
 						{
-							alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
-							while (t.Count() > 0 && !alreadyAddedToDatabase && counter < MAX_REQUESTS)
+							//process and keep getting new unstored
+							alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, dbContext, _logger, writeStream);
+							while (!alreadyAddedToDatabase && counter < MAX_REQUESTS)
 							{
 								var newMax = t.OrderByDescending(a => a.CheckinTime).Last().CheckinTime;
 
-								await sw.WriteLineAsync("Looking for old beers in {establishment.EstablishmentName}");
-								t = await CheckinsGet(establishment.EstablishmentId, client, sw);
+								await writeStream.WriteLineAsync($"Looking for less new beers in {establishment.EstablishmentName}");
+
+								t = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
 								counter++;
 								try
 								{
-									alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, _context, _logger, result, sw);
+									alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, dbContext, _logger, writeStream);
 								}
 								catch (Exception e)
 								{
 									UpdateEstablishment(establishment, e);
-									_context.Establishments.Update(establishment);
-									_context.SaveChanges();
-									await sw.WriteLineAsync($"Updating Establishment {e}");
+									dbContext.Establishments.Update(establishment);
+									dbContext.SaveChanges();
+									await writeStream.WriteLineAsync($"Updating Establishment {e}");
 									counter = MAX_REQUESTS;
 								}
 							}
 						}
-						catch (Exception e)
+
+						//get older
+						if (counter < MAX_REQUESTS && !newGet && !establishment.MaxedCheckinHistory)
 						{
-							UpdateEstablishment(establishment, e);
-							_context.Establishments.Update(establishment);
-							_context.SaveChanges();
-							await sw.WriteLineAsync($"Failed to update {e}");
+							t = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
+							counter++;
+							try
+							{
+								alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, dbContext, _logger, writeStream);
+								while (t.Count() > 0 && !alreadyAddedToDatabase && counter < MAX_REQUESTS)
+								{
+									var newMax = t.OrderByDescending(a => a.CheckinTime).Last().CheckinTime;
 
-
-							//return new BadRequestObjectResult(e);
+									await writeStream.WriteLineAsync("Looking for old beers in {establishment.EstablishmentName}");
+									t = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
+									counter++;
+									try
+									{
+										alreadyAddedToDatabase = await ProcessCheckins(t, alreadyAddedToDatabase, dbContext, _logger, writeStream);
+									}
+									catch (Exception e)
+									{
+										UpdateEstablishment(establishment, e);
+										dbContext.Establishments.Update(establishment);
+										dbContext.SaveChanges();
+										await writeStream.WriteLineAsync($"Updating Establishment {e}");
+										counter = MAX_REQUESTS;
+									}
+								}
+							}
+							catch (Exception e)
+							{
+								UpdateEstablishment(establishment, e);
+								dbContext.Establishments.Update(establishment);
+								dbContext.SaveChanges();
+								await writeStream.WriteLineAsync($"Failed to update {e}");
+							}
 						}
 					}
-				}
-				catch (Exception e)
-				{
-					UpdateEstablishment(establishment, e);
-					await sw.WriteLineAsync($"Failed to update {e}");
+					catch (Exception e)
+					{
+						UpdateEstablishment(establishment, e);
+						await writeStream.WriteLineAsync($"Failed to update {e}");
+					}
 
-					//return new BadRequestObjectResult(e);
 				}
+				await writeStream.WriteLineAsync("Update complete.");
 
+				await writeStream.FlushAsync();
+				stream.Close();
 			}
-			await sw.WriteLineAsync("Update complete.");
-
-			//resp.ContentType = "text/plain";
-			await sw.FlushAsync();
-			//resp.StatusCode = (int)HttpStatusCode.OK;
-			throw new Exception("Complete");
-
-			//return new OkObjectResult(result.ToString());
 		}
 
 		private static void UpdateEstablishment(Establishment establishment, Exception e)
@@ -184,8 +201,7 @@ namespace BigBeerData.Functions
 			}
 		}
 
-		private async static Task<bool> ProcessCheckins(List<Checkin> t, bool alreadyAdded, BigBeerContext db, ILogger log,
-				StringBuilder result, StreamWriter sw)
+		private async static Task<bool> ProcessCheckins(List<Checkin> t, bool alreadyAdded, BigBeerContext db, ILogger log, StreamWriter sw)
 		{
 			t.ForEach(async a =>
 			{
