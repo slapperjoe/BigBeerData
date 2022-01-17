@@ -1,7 +1,6 @@
 ﻿import * as mapboxgl from "mapbox-gl"
 import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl"
 import { Texture2D, CylinderGeometry } from "@luma.gl/core"
-import * as React from "react";
 
 window.addEventListener('resize', function () {
   window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
@@ -101,38 +100,6 @@ window.interop = {
       pitch: INITIAL_VIEW_STATE.pitch
     });
 
-    //const layerList = document.getElementById('menu');
-    //const inputs = layerList.getElementsByTagName('input');
-    //// @ts-ignore
-    //for (const input of inputs) {
-    //	input.onclick = (layer) => {
-    //		// @ts-ignore
-    //		const layerId = layer.target.id;
-    //		map.setStyle('mapbox://styles/mapbox/' + layerId);
-    //	};
-    //}
-
-    //map.on('load', () => {
-    //	map.addSource('mapbox-dem', {
-    //		'type': 'raster-dem',
-    //		'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-    //		'tileSize': 512,
-    //		'maxzoom': 25
-    //	});
-    //	// add the DEM source as a terrain layer with exaggerated height
-    //	map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
-
-    //	// add a sky layer that will show when the map is highly pitched
-    //	map.addLayer({
-    //		'id': 'sky',
-    //		'type': 'sky',
-    //		'paint': {
-    //			'sky-type': 'atmosphere',
-    //			'sky-atmosphere-sun': [0.0, 0.0],
-    //			'sky-atmosphere-sun-intensity': 15
-    //		}
-    //	});
-    //});
 
     map.addControl(new mapboxgl.FullscreenControl());
 
@@ -191,10 +158,7 @@ window.interop = {
               if (hv.layer.id.indexOf('piechart-layer') == 0) {
                 return {
                   html:
-                    <div>
-                      <span>Beers:</span>
-                      <table>${hv.object.beersBrewed.map(bb => createLabelRow(bb)).join('')}</table>
-                    </div>,
+                    `<div><span>Beers:</span><table>${hv.object.beersBrewed.map(bb => createLabelRow(bb)).join('')}</table></div>`,
                   style: {
                     fontSize: '0.8em'
                   }
@@ -394,19 +358,19 @@ function pixelValue(latitude, meters, zoomLevel) {
 }
 
 function createLabelRow(beerBrewed) {
-  const colSet = `'rgb(${beerBrewed.color[0]},${beerBrewed.color[1]},${beerBrewed.color[2]})'`
-  return <tr className='beer-row'>
+  const colSet = `rgb(${beerBrewed.color[0]},${beerBrewed.color[1]},${beerBrewed.color[2]})`
+  return `<tr className='beer-row'>
     <td>
-      <div className="mud-elevation-0 d-flex justify-center align-center" style={{ height: '24px;' }}>
+      <div className="mud-elevation-0 d-flex justify-center align-center" style="height: 24px; width: 24px;">
         <svg className="mud-icon-root mud-svg-icon mud-light-text mud-icon-size-medium" focusable="false" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M0 0h24v24H0z" fill="none"></path>
-          <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2z" fill={colSet}></path>
+          <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2z" fill="${colSet}"></path>
         </svg>
       </div>
     </td>
-    <td>{beerBrewed.name}</td>
-    <td>{beerBrewed.count}</td>
-  </tr>
+    <td>${beerBrewed.name}</td>
+    <td>${beerBrewed.count}</td>
+  </tr>`
 }
 
 declare global {

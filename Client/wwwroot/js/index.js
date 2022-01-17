@@ -1,7 +1,6 @@
 import * as mapboxgl from "mapbox-gl";
 import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl";
 import { Texture2D, CylinderGeometry } from "@luma.gl/core";
-import * as React from "react";
 window.addEventListener('resize', function () {
     window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
 });
@@ -180,11 +179,7 @@ window.interop = {
                         default:
                             if (hv.layer.id.indexOf('piechart-layer') == 0) {
                                 return {
-                                    html: React.createElement("div", null,
-                                        React.createElement("span", null, "Beers:"),
-                                        React.createElement("table", null,
-                                            "$",
-                                            hv.object.beersBrewed.map(bb => createLabelRow(bb)).join(''))),
+                                    html: `<div><span>Beers:</span><table>${hv.object.beersBrewed.map(bb => createLabelRow(bb)).join('')}</table></div>`,
                                     style: {
                                         fontSize: '0.8em'
                                     }
@@ -367,14 +362,18 @@ function pixelValue(latitude, meters, zoomLevel) {
     return screenPixel;
 }
 function createLabelRow(beerBrewed) {
-    const colSet = `'rgb(${beerBrewed.color[0]},${beerBrewed.color[1]},${beerBrewed.color[2]})'`;
-    return React.createElement("tr", { className: 'beer-row' },
-        React.createElement("td", null,
-            React.createElement("div", { className: "mud-elevation-0 d-flex justify-center align-center", style: { height: '24px;' } },
-                React.createElement("svg", { className: "mud-icon-root mud-svg-icon mud-light-text mud-icon-size-medium", focusable: "false", viewBox: "0 0 24 24", "aria-hidden": "true" },
-                    React.createElement("path", { d: "M0 0h24v24H0z", fill: "none" }),
-                    React.createElement("path", { d: "M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2z", fill: colSet })))),
-        React.createElement("td", null, beerBrewed.name),
-        React.createElement("td", null, beerBrewed.count));
+    const colSet = `rgb(${beerBrewed.color[0]},${beerBrewed.color[1]},${beerBrewed.color[2]})`;
+    return `<tr className='beer-row'>
+    <td>
+      <div className="mud-elevation-0 d-flex justify-center align-center" style="height: 24px;">
+        <svg className="mud-icon-root mud-svg-icon mud-light-text mud-icon-size-medium" focusable="false" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M0 0h24v24H0z" fill="none"></path>
+          <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2z" fill="${colSet}"></path>
+        </svg>
+      </div>
+    </td>
+    <td>${beerBrewed.name}</td>
+    <td>${beerBrewed.count}</td>
+  </tr>`;
 }
 //# sourceMappingURL=index.js.map

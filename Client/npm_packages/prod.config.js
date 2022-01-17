@@ -1,7 +1,7 @@
 ﻿const path = require('path');
 
 module.exports = {
-	entry: ['./src/index.tsx','../wwwroot/css/app.less'],
+	entry: ['./src/index.ts','../wwwroot/css/app.less'],
 	devtool: 'source-map',
 	mode: 'production',
 	module: {
