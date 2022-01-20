@@ -13,11 +13,12 @@
 
 <MudLayout>
     <MudAppBar>
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />         
             <img src="/img/onthebeers.png" alt="On The Beers/Big Beer Data" style="max-height: 100%;"/>
     </MudAppBar>
     <MudDrawer @bind-Open="@_drawerOpen" Class="sidebar">
         <NavMenu parent="@this" />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="@((e) => UpdateDatabase())" Class="@ReloadAnimation" />
     </MudDrawer>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.False">
@@ -27,15 +28,14 @@
 </MudLayout>
 
 @code {
-    bool _drawerOpen = true;
+  bool _drawerOpen = true;
 
-    void DrawerToggle()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
+  void DrawerToggle()
+  {
+    _drawerOpen = !_drawerOpen;
+  }
 
-    @code {
-        MudTheme BeerTheme = new MudTheme()
+  MudTheme BeerTheme = new MudTheme()
         {
             Palette = new Palette()
             {
@@ -47,29 +47,40 @@
         };
 
 
-        public bool loaded = false;
-        public Client.Pages.Index mainPage;
-        public List<AreaLocation> locations;
-        public int selected = 1;
-        
-        public async Task UpdateLocation(int id)
-        {
-            if (mainPage != null)
-            {
-                await Task.Run(async () => await mainPage.LocationUpdated(id));
-            }
-        }
+  public bool loaded = false;
+  public Client.Pages.Index mainPage;
+  public List<AreaLocation> locations;
+  public int selected = 1;
+  public bool updating = false;
 
+  public string ReloadAnimation => updating ? "reload-button reload-spin" : "reload-button";
 
-        public void setLoaded(bool loadedValue)
-        {
-            loaded = loadedValue;
-        }
-
-        protected override async Task OnInitializedAsync()
-        {
-            locations = await Http.GetFromJsonAsync<List<AreaLocation>>("api/location/current") ?? new List<AreaLocation>();
-            loaded = true;
-        }
+  public async Task UpdateLocation(int id)
+  {
+    if (mainPage != null)
+    {
+      await Task.Run(async () => await mainPage.LocationUpdated(id));
     }
+  }
+
+
+  public void setLoaded(bool loadedValue)
+  {
+    loaded = loadedValue;
+  }
+
+  protected override async Task OnInitializedAsync()
+  {
+    locations = await Http.GetFromJsonAsync<List<AreaLocation>>("api/location/current") ?? new List<AreaLocation>();
+    loaded = true;
+  }
+
+  protected async Task UpdateDatabase(){
+    if (!updating) {
+      updating = true;
+      var updateData = await Http.PostAsync("api/Update", null);
+      updating = false;
+    }
+  }
 }
+

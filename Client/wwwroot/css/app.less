@@ -128,6 +128,16 @@ app {
   }
 }
 
+@keyframes reloadspinner {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 
 .sidebar {
   background-image: linear-gradient(180deg, #ece279 0%, #ffcc80 70%);
@@ -142,6 +152,22 @@ app {
     -webkit-animation: animatedBackground 10s linear infinite;
     -ms-animation: animatedBackground 10s linear infinite;
     -o-animation: animatedBackground 10s linear infinite;
+  }
+  .reload-button {
+    width: 48px;
+  }
+
+  .reload-spin {
+    background-color: rgba(120,120,120, 0.4);
+    span {
+      svg {
+        animation-name: reloadspinner;
+        animation-duration: 6s;
+        animation-iteration-count: infinite;
+        transform-origin: 50% 50%;
+        display: inline-block;
+      }
+    }
   }
 
   .top-row {
