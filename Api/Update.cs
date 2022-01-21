@@ -46,7 +46,7 @@ namespace BigBeerData.Functions
 		[Timeout("00:05")]
 		[OpenApiOperation(operationId: "Run", tags: new[] { "UpdateDB" })]
 		[OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
-		[OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
+		[OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/event-stream", bodyType: typeof(string), Description = "The OK response")]
 		public async Task<HttpResponseMessage> Run(
 				[HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]
 						HttpRequest req)
@@ -83,7 +83,7 @@ namespace BigBeerData.Functions
 				var alreadyAddedToDatabase = false;
 				var newGet = false;
 
-				await writeStream.WriteLineAsync("Starting Data Scrape.");
+				await writeStream.WriteLineAsync("data: Starting Data Scrape.");
 				List<Establishment> establishments = dbContext.Establishments.Include(i => i.Checkins).ToList();
 
 				foreach (var establishment in establishments)
