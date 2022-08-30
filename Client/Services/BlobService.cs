@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Client.DTOs;
 
 namespace Client.Services
@@ -50,6 +51,13 @@ namespace Client.Services
             }
 
             return null;
+        }
+
+        public async Task<Azure.Response<BlobContentInfo>> UploadBlobAsync(string fileName, Stream stream)
+        {
+            var container = new BlobContainerClient(_blobConnectionString, _blobContainer);
+            var result = await container.UploadBlobAsync(fileName, stream);
+            return result;
         }
 
     }

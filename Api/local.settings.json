@@ -3,7 +3,8 @@
   "Values": {
     "AzureWebJobsStorage": "",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "DBConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BigBeerData.Core;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"
+    "DBConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BigBeerData.Core;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False",
+    "BigBeerStorageAccount": "DefaultEndpointsProtocol=https;AccountName=cs1c08048ede1dax4ddbx836;AccountKey=JYocmStGNwCa+XlI7K4s/SquGPidwmGqiaeW2Ro8ZF46H2VSOb7gLMFti4slDPtaTiU2x0XbeUVAjiwJr5uG4Q==;EndpointSuffix=core.windows.net"
   },
   "Host": {
     "CORS": "*"
