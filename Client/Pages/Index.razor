@@ -7,27 +7,13 @@
 @using System.Threading
 @using System.Web
 @inject HttpClient Http
-@inject BrowserService Service
+@inject Services.BrowserService Service
 
 
 
 <div class="control-section" style="height: 100%;">
     @if (parent.loaded)
     {
-@*        <div id="menu">
-            <input id="satellite-v9" type="radio" name="rtoggle" value="satellite" checked="checked">
-            <!-- See a list of Mapbox-hosted public styles at -->
-            <!-- https://docs.mapbox.com/api/maps/styles/#mapbox-styles -->
-        <label for="satellite-v9">satellite</label>
-            <input id="light-v10" type="radio" name="rtoggle" value="light">
-            <label for="light-v10">light</label>
-            <input id="dark-v10" type="radio" name="rtoggle" value="dark">
-            <label for="dark-v10">dark</label>
-            <input id="streets-v11" type="radio" name="rtoggle" value="streets">
-            <label for="streets-v11">streets</label>
-            <input id="outdoors-v11" type="radio" name="rtoggle" value="outdoors">
-            <label for="outdoors-v11">outdoors</label>
-        </div>*@
         <div @ref="mapContainer" id="mapContainer" style="height: @(MainHeight.ToPixel())">
             <div id="map" style="height: 100%"></div>
             <canvas id="deck-canvas" style="height: 100%"></canvas>
@@ -44,34 +30,33 @@
 </div>
 
 @code {
+  [CascadingParameter(Name = "parent")]
+  public Client.Shared.MainLayout parent { get; set; }
 
-    [Parameter]
-    public Client.Shared.MainLayout parent { get; set; }
+  public ElementReference mapContainer;
 
-    public ElementReference mapContainer;
+  public LocationStyle[]? locationStyles;
+  public GeoBounds? bounds;
 
-    public LocationStyle[]? locationStyles;
-    public GeoBounds? bounds;
+  private double cntrLong = 0;
+  private double cntrLat = 0;
+  private double zoom = 12;
+  private int Height = 0;
+  public int MainHeight { get; set; }
+  public int Width { get; set; }
+  public int WSVGPad { get; set; }
+  public int HSVGPad { get; set; }
 
-    private double cntrLong = 0;
-    private double cntrLat = 0;
-    private double zoom = 12;
-    private int Height = 0;
-    public int MainHeight { get; set; }
-    public int Width { get; set; }
-    public int WSVGPad { get; set; }
-    public int HSVGPad { get; set; }
-
-    public bool mcpSet = false;
+  public bool mcpSet = false;
 
 
-    protected override async Task OnInitializedAsync()
-    {
-        await GetMainArea(false);
-        locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>("/api/location/1/style");
-        bounds = await Http.GetFromJsonAsync<GeoBounds>("/api/geo/bounds/1");
-        parent.setLoaded(true);
-    }
+  protected override async Task OnInitializedAsync()
+  {
+    await GetMainArea(false);
+    locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>("/api/location/1/style");
+    bounds = await Http.GetFromJsonAsync<GeoBounds>("/api/geo/bounds/1");
+    parent.setLoaded(true);
+  }
 
 
     [JSInvokable]

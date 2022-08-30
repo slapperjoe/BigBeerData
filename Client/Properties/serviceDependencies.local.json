@@ -1,17 +1,16 @@
 {
   "dependencies": {
-    "appInsights1": {
-      "type": "appInsights.sdk"
-    },
-    "secrets1": {
-      "type": "secrets.user"
-    },
     "storage1": {
       "secretStore": "LocalSecretsFile",
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Storage/storageAccounts/cs1c08048ede1dax4ddbx836",
       "type": "storage.azure",
-      "connectionId": "BigBeerStorageAccount",
-      "dynamicId": null
+      "connectionId": "BigBeerStorageAccount"
+    },
+    "secrets1": {
+      "secretStore": null,
+      "resourceId": null,
+      "type": "secrets.user",
+      "connectionId": null
     }
   }
 }

@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 using BigBeerData.Shared;
 using Microsoft.JSInterop;
 
-namespace Client
+namespace Client.Services
 {
     public class BrowserService
     {
 
         public DataState state { get; set; }
 
-        private readonly IJSRuntime _js;        
+        private readonly IJSRuntime _js;
 
         public BrowserService(IJSRuntime js)
         {

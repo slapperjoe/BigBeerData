@@ -1,6 +1,6 @@
 import * as mapboxgl from "mapbox-gl";
 import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl";
-import { Texture2D, CylinderGeometry } from "@luma.gl/core";
+import { Texture2D, CylinderGeometry, readPixelsToArray } from "@luma.gl/core";
 window.addEventListener('resize', function () {
     window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
 });
@@ -103,7 +103,7 @@ window.interop = {
             controller: true,
             onWebGLInitialized: (gl) => {
                 // @ts-ignore
-                gl = WebGLDebugUtils.makeDebugContext(gl, throwOnGLError, logGLCall);
+                //gl = WebGLDebugUtils.makeDebugContext(gl, throwOnGLError, logGLCall);
                 window.deckGLContext = gl;
             },
             onViewStateChange: ({ viewState, interactionState, oldViewState }) => {
@@ -251,10 +251,23 @@ window.interop = {
                                         });
                                         resolve(texture);
                                     }),
+                                    onClick: ({ bitmap, layer }) => {
+                                        if (bitmap) {
+                                            debugger;
+                                            const pixelColor = readPixelsToArray(layer.props.image, {
+                                                sourceX: bitmap.pixel[0],
+                                                sourceY: bitmap.pixel[1],
+                                                sourceWidth: 1,
+                                                sourceHeight: 1
+                                            });
+                                            console.log('Color at picked pixel:', pixelColor);
+                                        }
+                                    },
                                     autoHighlight: true,
                                     pickable: true,
                                     mesh: new CylinderGeometry({ radius: 5, height: 1, topCap: true, nradial: 48, bottomCap: false }),
                                     sizeScale: 16,
+                                    _useMeshColors: true,
                                     getPosition: d => [d.location.x, d.location.y],
                                     getColor: d => [255, 214, 0],
                                     getOrientation: d => [0, 0, 270]

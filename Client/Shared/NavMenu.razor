@@ -1,6 +1,7 @@
 ﻿@using System.Net.Http
 @inject HttpClient Http
-@inject BrowserService Service
+@inject Services.BrowserService Service
+@inject NavigationManager NavigationManager
 
 <MudNavMenu Class="bubbles" Style="padding-top: 32px;">
 	@if (parent.locations == null)
@@ -22,6 +23,9 @@
 				@location.Name
 			</MudNavLink>
 		}
+		<MudNavLink
+			OnClick='async () => NavigationManager.NavigateTo("tochka")'>Tochka
+		</MudNavLink>
 	}
 </MudNavMenu>
 

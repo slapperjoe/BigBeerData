@@ -14,6 +14,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
     <TypeScriptModuleKind>none</TypeScriptModuleKind>
+    <UserSecretsId>f2e2f872-ee12-4604-827f-1379a8248738</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,9 +26,13 @@
     <Content Include="npm_packages\src\LayerExtensions.ts" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.0" PrivateAssets="all" /> 
-    <PackageReference Include="MudBlazor" Version="6.0.2" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.3.0" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.1.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.8" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.0.0" /> 
+    <PackageReference Include="MudBlazor" Version="6.0.14" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,55 @@
+﻿@page "/tochka"
+
+<PageTitle>Tochka</PageTitle>
+
+@using BigBeerData.Shared
+@using Client.DTOs
+@using System.Net.Http
+@using System.Threading
+@using System.Web
+@inject HttpClient Http
+@inject Services.BlobService BlobData
+
+<style>
+	.fluid {
+		width: 100%;
+		height: auto;
+	}
+</style>
+
+
+<div class="control-section" style="height: 100%; padding: 16px;">
+	@for (int i = 1; i < 7; i++)
+	{
+		string tapLabel = "Tap " + i;
+		string fileBox = "fileInput" + i;
+		<span style="width: 16.66%; display: inline-block; text-align: center;">
+			<InputFile id="@fileBox" OnChange="UploadFiles" hidden multiple />
+			
+			<MudFab HtmlTag="TapUpload"
+						Color="Color.Success"
+						Icon="@Icons.Filled.Image"
+						label="@tapLabel"
+						for="@fileBox" />
+		    <MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i}.png")' Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
+		</span>
+	}
+</div>
+
+@code {
+
+
+	protected override async Task OnInitializedAsync()
+	{
+	}
+
+	IList<IBrowserFile> files = new List<IBrowserFile>();
+
+	private void UploadFiles(InputFileChangeEventArgs e)
+	{
+		foreach (var file in e.GetMultipleFiles())
+		{
+			files.Add(file);
+		}
+	}
+}
