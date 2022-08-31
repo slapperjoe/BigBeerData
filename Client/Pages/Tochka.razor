@@ -113,21 +113,9 @@
 
       if (response.IsSuccessStatusCode)
       {
-        var options = new JsonSerializerOptions
-          {
-            PropertyNameCaseInsensitive = true,
-          };
+        
+      } else {
 
-        using var responseStream =
-            await response.Content.ReadAsStreamAsync();
-
-        var newUploadResults = await JsonSerializer
-            .DeserializeAsync<IList<UploadResult>>(responseStream, options);
-
-        if (newUploadResults is not null)
-        {
-          uploadResults = uploadResults.Concat(newUploadResults).ToList();
-        }
       }
     }
 
