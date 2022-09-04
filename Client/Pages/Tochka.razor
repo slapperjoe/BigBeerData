@@ -11,142 +11,157 @@
 @using System.Text.Json
 @inject HttpClient Http
 @inject Services.BlobService BlobData
+@inject Services.BrowserService Browser
 @inject ILogger<Tochka> Logger
 
+@inject IJSRuntime JSRuntime
+
 <style>
-  .fluid {
-      width: 100%;
-      height: auto;
-  }
+	.fluid {
+			width: 100%;
+			height: auto;
+	}
 </style>
 
-
 <div class="control-section d-flex flex-grow-1 flex-row gap-4" style="height: 100%; padding: 16px;">
-  @for (int i = 1; i < 7; i++)
-  {
-    string tapLabel = "Tap " + i;
-    string fileBox = "fileInput" + i;
-    int localIndex = i;
+	@for (int i = 1; i < 7; i++)
+	{
+		string tapLabel = "Tap " + i;
+		string fileBox = "fileInput" + i;
+		int localIndex = i;
 
-    MudImage imageBox = new MudImage();
+		ElementReference elementRef = new ElementReference($"blzRef{localIndex}");
+		<span style="text-align: center; position: relative;">
+			<InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e)" hidden accept="image/png, image/gif, image/jpeg" />
 
-    <span style="text-align: center;">
-      <InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e, imageBox)" hidden accept="image/png, image/gif, image/jpeg" />
-
-      <MudFab HtmlTag="label"
-            Color="Color.Dark"
-            Icon="@Icons.Filled.Image"
-            label="@tapLabel"
-            for="@fileBox" />
-      <MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i}.png")' Alt="@tapLabel" Elevation="25" Class="rounded-lg" ref="@imageBox" />
-    </span>
-  }
+			<MudFab HtmlTag="label"
+						Color="Color.Dark"
+						Icon="@Icons.Filled.Image"
+						label="@tapLabel"
+						for="@fileBox" />
+			<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToUniversalTime()}")'
+							Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
+			<div id='@($"loadingBox{localIndex}")' style="width: 100%;height: 100%;background-color: rgba(0,0,0, 0.5);position: absolute; top: 0px; border-radius: 5px; display: none;"
+				 @ref=imageRef[localIndex-1]>
+			</div>
+		</span>
+	}
 
 </div>
 
 @if (files.Count > 0)
 {
-  <div class="d-flex flex-grow-1 flex-row-reverse">
-    <MudButton Style="float: right;" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success">Upload Changes</MudButton>
-  </div>
+	<div class="d-flex flex-grow-1 flex-row-reverse">
+		<MudButton Style="float: right;" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success">Upload Changes</MudButton>
+	</div>
 }
 
 @code {
 
+	ElementReference[] imageRef { get; set; } = new ElementReference[8];
 
-  protected override async Task OnInitializedAsync()
-  {
-  }
+	protected override async Task OnInitializedAsync()
+	{
+	}
 
-  IDictionary<int, IBrowserFile> filesD = new Dictionary<int, IBrowserFile>();
+	IDictionary<int, IBrowserFile> filesD = new Dictionary<int, IBrowserFile>();
 
-  List<File> files = new List<File>();
-  List<UploadResult> uploadResults = new List<UploadResult>();
-  bool upload = false;
+	List<File> files = new List<File>();
+	List<UploadResult> uploadResults = new List<UploadResult>();
+	bool upload = false;
 
-  private async void UploadFiles(int i, InputFileChangeEventArgs e, MudImage image)
-  {
-    var fileName = e.File.Name;
-    fileName = i + fileName.Substring(e.File.Name.LastIndexOf('.'));
+	private async void UploadFiles(int i, InputFileChangeEventArgs e)
+	{
+		var fileName = e.File.Name;
+		fileName = i + fileName.Substring(e.File.Name.LastIndexOf('.'));
 
-    var maxFileSize = 10240000;
+		var maxFileSize = 10240000;
 
-    using var content = new MultipartFormDataContent();
+		var loadBox = imageRef[i - 1];
 
-    try
-    {
-      var fileContent =
-          new StreamContent(e.File.OpenReadStream(maxFileSize));
+		await Browser.ShowLoadBox(loadBox);
 
-      fileContent.Headers.ContentType =
-          new MediaTypeHeaderValue(e.File.ContentType);
+		using var content = new MultipartFormDataContent();
 
-      files.Add(new() { Name = fileName });
+		try
+		{
+			var fileContent =
+					new StreamContent(e.File.OpenReadStream(maxFileSize));
 
-      content.Add(
-          content: fileContent,
-          name: "\"files\"",
-          fileName: fileName);
+			fileContent.Headers.ContentType =
+					new MediaTypeHeaderValue(e.File.ContentType);
 
-      upload = true;
-    }
-    catch (Exception ex)
-    {
-      Logger.LogInformation(
-          "{FileName} not uploaded (Err: 6): {Message}",
-          fileName, ex.Message);
+			files.Add(new() { Name = fileName });
 
-      uploadResults.Add(
-          new()
-            {
-              FileName = fileName,
-              ErrorCode = 6,
-              Uploaded = false
-            });
-    }
-    if (upload)
-    {
+			content.Add(
+					content: fileContent,
+					name: "\"files\"",
+					fileName: fileName);
 
-      var response =
-          await Http.PostAsync("http://localhost:7071/api/FileUpload",
-          content);
+			upload = true;
+		}
+		catch (Exception ex)
+		{
+			Logger.LogInformation(
+					"{FileName} not uploaded (Err: 6): {Message}",
+					fileName, ex.Message);
 
-      if (response.IsSuccessStatusCode)
-      {
-        
-      } else {
+			uploadResults.Add(
+					new()
+						{
+							FileName = fileName,
+							ErrorCode = 6,
+							Uploaded = false
+						});
+		}
+		if (upload)
+		{
 
-      }
-    }
+			var response =
+					await Http.PostAsync("http://localhost:7071/api/FileUpload",
+					content);
 
-  }
+			if (response.IsSuccessStatusCode)
+			{
+				//Browser.RefreshImage(fileName);
+				await Browser.HideLoadBox(loadBox);
+				StateHasChanged();
+
+			}
+			else
+			{
+
+			}
+		}
+
+	}
 
 
 
-  private static bool FileUpload(IList<UploadResult> uploadResults,
-      string? fileName, ILogger<Tochka> logger, out UploadResult result)
-  {
-    result = uploadResults.SingleOrDefault(f => f.FileName == fileName) ?? new();
+	private static bool FileUpload(IList<UploadResult> uploadResults,
+			string? fileName, ILogger<Tochka> logger, out UploadResult result)
+	{
+		result = uploadResults.SingleOrDefault(f => f.FileName == fileName) ?? new();
 
-    if (!result.Uploaded)
-    {
-      logger.LogInformation("{FileName} not uploaded (Err: 5)", fileName);
-      result.ErrorCode = 5;
-    }
+		if (!result.Uploaded)
+		{
+			logger.LogInformation("{FileName} not uploaded (Err: 5)", fileName);
+			result.ErrorCode = 5;
+		}
 
-    return result.Uploaded;
-  }
+		return result.Uploaded;
+	}
 
-  private class File
-  {
-    public string? Name { get; set; }
-  }
+	private class File
+	{
+		public string? Name { get; set; }
+	}
 
-  public class UploadResult
-  {
-    public bool Uploaded { get; set; }
-    public string? FileName { get; set; }
-    public string? StoredFileName { get; set; }
-    public int ErrorCode { get; set; }
-  }
+	public class UploadResult
+	{
+		public bool Uploaded { get; set; }
+		public string? FileName { get; set; }
+		public string? StoredFileName { get; set; }
+		public int ErrorCode { get; set; }
+	}
 }

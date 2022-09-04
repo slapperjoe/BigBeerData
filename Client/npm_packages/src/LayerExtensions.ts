@@ -165,6 +165,9 @@ declare global {
 			getRenderArea: () => {};
 			hookDotNet: (a: any) => void;
 			consoleLog: (a: string) => boolean;
+			RefreshImage: (imageElementId, imageStream) => Promise<void>;
+			ShowLoadBox: (element) => void;
+			HideLoadBox: (element) => void;
 		};
 		deckGLContext: any;
 	}

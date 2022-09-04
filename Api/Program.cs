@@ -5,6 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http.Headers;
 
+using Microsoft.Azure.Storage.Blob;
+
+using Microsoft.Azure.Storage;
+
 using BigBeerData.Shared;
 
 [assembly: FunctionsStartup(typeof(Api.Startup))]
@@ -18,6 +22,7 @@ namespace Api
 									opt.UseSqlServer(
 											builder.GetContext().Configuration["DBConnection"]
 									));
+			
 
 			builder.Services.AddHttpClient("BeerBot", config =>
 								{

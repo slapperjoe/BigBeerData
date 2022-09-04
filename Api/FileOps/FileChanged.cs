@@ -8,22 +8,39 @@ using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using static System.Net.Mime.MediaTypeNames;
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
+
 using Newtonsoft.Json;
 using System.Text;
+using System.Collections.Generic;
+using Microsoft.Azure.Storage.Blob;
 
 namespace Api.FileOps
 {
+
+    
     public class FileChanged
-    {       
+    {
+
+        const string MD5Key = "ParsedMD5";
 
         [FunctionName("FileChanged")]
-        public void Run([BlobTrigger("bigbeercontainer/{name}", Connection = "BigBeerStorageAccount")] Stream myBlob, string name, ILogger log)
+        public async void Run(
+            [BlobTrigger("bigbeercontainer/{name}", Connection = "BigBeerStorageAccount")] ICloudBlob blob,
+            //[ServiceBus("process", Connection = "sbcss", EntityType = EntityType.Queue)] ICollector queueCollector,
+            string name,
+            Uri uri, // blob primary location
+            IDictionary<string, string> metaData, // user-defined blob metadata
+            BlobProperties properties, // blob system properties, e.g. LastModified
+            ILogger log)
         {
-            log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
+            if (metaData != null && metaData.ContainsKey(MD5Key) && metaData[MD5Key] == properties.ContentMD5)
+            {
+                // old content
+            } else
+            {
+                blob.Metadata[MD5Key] = properties.ContentMD5;
+                await blob.SetMetadataAsync();
+            }
         }
     }
 }
