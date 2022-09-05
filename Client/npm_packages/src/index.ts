@@ -91,7 +91,7 @@ window.interop = {
             pitch: 80
         };
 
-        mapboxgl.accessToken = 'pk.eyJ1IjoibWFyaWMxIiwiYSI6Ii0xdWs1TlUifQ.U56tiQG_kj88zNf_1PxHQw';// process.env.MapboxAccessToken; // eslint-disable-line
+        (mapboxgl as any).accessToken = 'pk.eyJ1IjoibWFyaWMxIiwiYSI6Ii0xdWs1TlUifQ.U56tiQG_kj88zNf_1PxHQw';// process.env.MapboxAccessToken; // eslint-disable-line
 
         const map = new mapboxgl.Map({
             container: 'map',

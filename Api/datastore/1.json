@@ -1,0 +1,7 @@
+{
+  "name": "Some beer",
+  "brewer": "Brewery",
+  "description": "Beer Explanation",
+  "schooner": 12,
+  "growler":  40
+}

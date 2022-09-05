@@ -5,12 +5,12 @@
     "removeComments": false,
     "sourceMap": true,
     "target": "ES2015",
-    "lib": [ "ES2019", "dom", "esnext.asynciterable", "DOM.Iterable", "ES2019.Array" ],
+    "lib": [ "ESNext", "dom", "esnext.asynciterable", "DOM.Iterable", "ESNext.Array" ],
     "moduleResolution": "Node",
     "outDir": "../wwwroot/js",
     "module": "es6",
     "jsx": "react",
-    "allowJs": true,
+    "allowJs": true
   },
   "include": [ "src/*.ts" ],
   "exclude": [

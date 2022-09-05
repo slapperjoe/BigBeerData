@@ -14,6 +14,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
     <TypeScriptModuleKind>none</TypeScriptModuleKind>
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
     <UserSecretsId>f2e2f872-ee12-4604-827f-1379a8248738</UserSecretsId>
   </PropertyGroup>
 

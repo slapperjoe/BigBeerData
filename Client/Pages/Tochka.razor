@@ -41,6 +41,12 @@
 						for="@fileBox" />
 			<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToUniversalTime()}")'
 							Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
+			<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="updateChanged" />
+			<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" />
+			<MudNumericField T="decimal" Step="(decimal)0.5" Format="C2" @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" />
+			<MudNumericField T="decimal" Step="(decimal)0.5" Format="C2" @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" />
+			<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description"  Variant="Variant.Outlined" />
+
 			<div id='@($"loadingBox{localIndex}")' style="width: 100%;height: 100%;background-color: rgba(0,0,0, 0.5);position: absolute; top: 0px; border-radius: 5px; display: none;"
 				 @ref=imageRef[localIndex-1]>
 			</div>
@@ -49,7 +55,7 @@
 
 </div>
 
-@if (files.Count > 0)
+@if (dataChanged)
 {
 	<div class="d-flex flex-grow-1 flex-row-reverse">
 		<MudButton Style="float: right;" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success">Upload Changes</MudButton>
@@ -59,9 +65,39 @@
 @code {
 
 	ElementReference[] imageRef { get; set; } = new ElementReference[8];
+	List<BeerDTO> costList = new List<BeerDTO>();
+	bool dataChanged = false;
+	bool dataBound = false;
 
 	protected override async Task OnInitializedAsync()
 	{
+		for (int i = 1; i < 7; i++)
+		{
+			try {
+				var result = await Http.GetFromJsonAsync<BeerDTO>($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i}.json");
+				costList.Add(result);
+			} catch (Exception e)
+			{
+				costList.Add(null);
+			}
+		}
+	}
+
+	protected override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			dataBound = true;
+		}
+		base.OnAfterRender(firstRender);
+	}
+
+	protected void updateChanged(string value)
+	{
+		if (dataBound)
+		{
+			dataChanged = true;
+		}
 	}
 
 	IDictionary<int, IBrowserFile> filesD = new Dictionary<int, IBrowserFile>();

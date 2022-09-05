@@ -24,7 +24,7 @@ namespace Api.FileOps
         const string MD5Key = "ParsedMD5";
 
         [FunctionName("FileChanged")]
-        public async void Run(
+        public async Task Run(
             [BlobTrigger("bigbeercontainer/{name}", Connection = "BigBeerStorageAccount")] ICloudBlob blob,
             //[ServiceBus("process", Connection = "sbcss", EntityType = EntityType.Queue)] ICollector queueCollector,
             string name,
