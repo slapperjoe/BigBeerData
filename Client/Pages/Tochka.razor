@@ -16,44 +16,71 @@
 
 @inject IJSRuntime JSRuntime
 
+
+
 <style>
 	.fluid {
 			width: 100%;
 			height: auto;
 	}
+
+	.tapLoadBox {
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0,0,0, 0.5);
+			position: absolute;
+			top: 0px;
+			border-radius: 5px;
+	}
 </style>
 
+
 <div class="control-section d-flex flex-grow-1 flex-row gap-4" style="height: 100%; padding: 16px;">
-	@for (int i = 1; i < 7; i++)
+	@for (int i = 0; i < TAP_COUNT; i++)
 	{
-		string tapLabel = "Tap " + i;
-		string fileBox = "fileInput" + i;
-		int localIndex = i;
+		try
+		{
+			if (costList.Count() > i)
+			{
+				int localIndex = i + 1;
+				string tapLabel = "Tap " + localIndex;
+				string fileBox = "fileInput" + localIndex;
 
-		ElementReference elementRef = new ElementReference($"blzRef{localIndex}");
-		<span style="text-align: center; position: relative;">
-			<InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e)" hidden accept="image/png, image/gif, image/jpeg" />
+				<span style="text-align: center; position: relative;">
+					<InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e)" hidden accept="image/png, image/gif, image/jpeg" />
 
-			<MudFab HtmlTag="label"
+					<MudFab HtmlTag="label"
 						Color="Color.Dark"
 						Icon="@Icons.Filled.Image"
 						label="@tapLabel"
 						for="@fileBox" />
-			<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToUniversalTime()}")'
+					<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToUniversalTime()}")'
 							Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
-			<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="updateChanged" />
-			<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" />
-			<MudNumericField T="decimal" Step="(decimal)0.5" Format="C2" @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" />
-			<MudNumericField T="decimal" Step="(decimal)0.5" Format="C2" @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" />
-			<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description"  Variant="Variant.Outlined" />
 
-			<div id='@($"loadingBox{localIndex}")' style="width: 100%;height: 100%;background-color: rgba(0,0,0, 0.5);position: absolute; top: 0px; border-radius: 5px; display: none;"
-				 @ref=imageRef[localIndex-1]>
-			</div>
-		</span>
+					<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="updateChanged" />
+					<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" TextChanged="updateChanged" />
+					<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="updateChanged" />
+					<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="updateChanged" />
+					<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="updateChanged" />
+
+					<div id='@($"loadingBox{localIndex}")' class="tapLoadBox" style="display: none;" @ref=imageRef[localIndex]>	</div>
+				</span>
+				@if (costList.Count() == TAP_COUNT)
+				{
+					dataBound = true;
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			var f = i;
+			var bob = costList;
+			var jim = 0;
+		}
 	}
 
 </div>
+
 
 @if (dataChanged)
 {
@@ -64,31 +91,37 @@
 
 @code {
 
+	const int TAP_COUNT = 6;
+
 	ElementReference[] imageRef { get; set; } = new ElementReference[8];
 	List<BeerDTO> costList = new List<BeerDTO>();
+	IDictionary<int, IBrowserFile> filesD = new Dictionary<int, IBrowserFile>();
+
+	List<File> files = new List<File>();
+	List<UploadResult> uploadResults = new List<UploadResult>();
+	bool upload = false;
 	bool dataChanged = false;
 	bool dataBound = false;
 
 	protected override async Task OnInitializedAsync()
 	{
-		for (int i = 1; i < 7; i++)
+		for (int i = 0; i < TAP_COUNT; i++)
 		{
-			try {
-				var result = await Http.GetFromJsonAsync<BeerDTO>($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i}.json");
-				costList.Add(result);
-			} catch (Exception e)
+			try
 			{
-				costList.Add(null);
+				var result = await Http.GetFromJsonAsync<BeerDTO>($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i + 1}.json");
+				costList.Add(result);
+			}
+			catch (Exception e)
+			{
+				Logger.LogError(e.Message);
+				costList.Add(new BeerDTO());
 			}
 		}
 	}
 
 	protected override void OnAfterRender(bool firstRender)
 	{
-		if (firstRender)
-		{
-			dataBound = true;
-		}
 		base.OnAfterRender(firstRender);
 	}
 
@@ -99,12 +132,6 @@
 			dataChanged = true;
 		}
 	}
-
-	IDictionary<int, IBrowserFile> filesD = new Dictionary<int, IBrowserFile>();
-
-	List<File> files = new List<File>();
-	List<UploadResult> uploadResults = new List<UploadResult>();
-	bool upload = false;
 
 	private async void UploadFiles(int i, InputFileChangeEventArgs e)
 	{
