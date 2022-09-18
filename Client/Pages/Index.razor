@@ -1,4 +1,5 @@
 ﻿@page "/"
+@namespace Client.Pages
 
 <PageTitle>OnTheBeers</PageTitle>
 
@@ -31,7 +32,7 @@
 
 @code {
   [CascadingParameter(Name = "parent")]
-  public Client.Shared.MainLayout parent { get; set; }
+  public Client.Shared.MainLayout parent { get; set; } = default!;
 
   public ElementReference mapContainer;
 

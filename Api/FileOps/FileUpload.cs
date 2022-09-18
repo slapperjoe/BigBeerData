@@ -1,73 +1,84 @@
-using System;
-using System.IO;
-using System.Net.Http;
+using System.Collections.Generic;
 using System.Net;
-using System.Threading.Tasks;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+
+using System.Net.Http;
+using System.Reflection.PortableExecutable;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using static System.Net.Mime.MediaTypeNames;
-using Azure.Storage.Blobs.Models;
+
 using Azure.Storage.Blobs;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Newtonsoft.Json;
-using System.Text;
+using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Blobs.Models;
+using Microsoft.AspNetCore.WebUtilities;
+using Azure.Core;
+using Api.Helpers;
+using Microsoft.Net.Http.Headers;
 
 namespace Api.FileOps
 {
     public class FileUpload
     {
-        [FunctionName("FileUpload")]
-        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestMessage req, TraceWriter log)
+        private readonly ILogger _logger;
+
+        public FileUpload(ILoggerFactory loggerFactory)
         {
-            log.Info("C# HTTP trigger function processed a request.");
+            _logger = loggerFactory.CreateLogger<FileUpload>();
+        }
 
-            // Get request body
-            var data = await req.Content.ReadAsMultipartAsync();
+        [Function("FileUpload")]
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
+        {
 
-            foreach (var file in data.Contents) {
+            var boundary = MultipartRequestHelper.GetBoundary(
+                MediaTypeHeaderValue.Parse(req.Headers.GetValues("Content-Type").FirstOrDefault()), (int)req.Body.Length);
 
-                using (MemoryStream ms = new MemoryStream())
+            var reader = new MultipartReader(boundary, req.Body);
+
+            var data = await reader.ReadNextSectionAsync();
+
+            while (data != null)
+            {
+                var file = data.AsFileSection();
+                using (MemoryStream ms = new())
                 {
-                    string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount");
-                    CloudStorageAccount storageAccount;
-                    if (CloudStorageAccount.TryParse(storageConnectionString, out storageAccount))
+                    string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
+                    try
                     {
-                        // Create the CloudBlobClient that represents the Blob storage endpoint for the storage account.
-                        CloudBlobClient cloudBlobClient = storageAccount.CreateCloudBlobClient();
+                        var blobServiceClient = new BlobServiceClient(storageConnectionString);
 
-                        CloudBlobContainer cloudBlobContainer = cloudBlobClient.GetContainerReference("bigbeercontainer");
+                        var cloudBlobContainer = blobServiceClient.GetBlobContainerClient("bigbeercontainer");
                         await cloudBlobContainer.CreateIfNotExistsAsync();
 
-                        CloudBlockBlob cloudBlockBlob = cloudBlobContainer.GetBlockBlobReference(file.Headers.ContentDisposition.FileName);
-                        cloudBlockBlob.Properties.ContentType = file.Headers.ContentType.ToString();
-                           
-                        try
-                        {
-                            await cloudBlockBlob.UploadFromStreamAsync(await file.ReadAsStreamAsync());
-                        }
-                        catch (Exception ex) {
-                            log.Error(ex.Message);
-                            return new HttpResponseMessage(HttpStatusCode.BadRequest)
-                            {
-                                Content = new StringContent(ex.Message),
-                            };
-                        }
+                        BlockBlobClient cloudBlockBlob = cloudBlobContainer.GetBlockBlobClient(file.FileName);
+
+                        await file.FileStream.CopyToAsync(ms);
+                        ms.Position = 0;
+
+                        await cloudBlockBlob.UploadAsync(ms);
+
+                        var props = 
+
+                        await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = data.ContentType});
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex.Message);
+                        var errorresponse = req.CreateResponse(HttpStatusCode.InternalServerError);
+                        errorresponse.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+                        errorresponse.WriteString(ex.Message);
+                        return errorresponse;
                     }
                 }
-
-                //System.Drawing.Image img = System.Drawing.Image.FromFile(file.Headers.ContentDisposition.FileName);
-                //var fileStream = await file.ReadAsStreamAsync();
-                //img.Save(fileStream, System.Drawing.Imaging.ImageFormat.Png);
+                data = await reader.ReadNextSectionAsync();
             }
 
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("Uploaded to Storage Blob"),
-            };
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+
+            response.WriteString("Uploaded to Storage Blob");
+
+            return response;
         }
     }
 }
-

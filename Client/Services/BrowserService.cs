@@ -11,7 +11,7 @@ namespace Client.Services
     public class BrowserService
     {
 
-        public DataState state { get; set; }
+        public DataState state { get; set; } = default!;
 
         private readonly IJSRuntime _js;
 

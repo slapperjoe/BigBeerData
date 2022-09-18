@@ -1,44 +1,45 @@
 ﻿const path = require('path');
 
 module.exports = {
-	entry: ['./src/index.ts','../wwwroot/css/app.less'],
-	devtool: 'source-map',
-	mode: 'production',
-	module: {
-		rules: [
-			{
-				test: /\.tsx?$/,
-				use: 'ts-loader',
-				exclude: /node_modules/,
-			},
-			{
-				test: /\.less$/i,
-				use: [
-					// compiles Less to CSS
-					"style-loader",
-					{
-            loader: "css-loader",
-            options: {
-              sourceMap: true,
+    entry: ['./src/index.ts', '../wwwroot/css/app.less'],
+    devtool: 'source-map',
+    mode: 'production',
+    module: {
+        rules: [
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
             },
-          },
-          {
-            loader: "less-loader",
-            options: {
-              sourceMap: true,
+            {
+                test: /\.less$/i,
+                use: [
+                    // compiles Less to CSS
+                    "style-loader",
+                    {
+                        loader: "css-loader",
+                        options: {
+                            sourceMap: true,
+                        },
+                    },
+                    {
+                        loader: "less-loader",
+                        options: {
+                            sourceMap: true,
+                        },
+                    },
+                ],
             },
-          },
-				],
-			},
-		],
-	},
-	resolve: {
-		extensions: ['.tsx', '.ts', '.js'],
-	},
-	output: {
-		filename: 'index.bundle.js',
-		path: path.resolve(__dirname, '../wwwroot/js'),
-	},
+        ],
+    },
+    resolve: {
+        extensions: ['.tsx', '.ts', '.js', '.less'],
+    },
+    output: {
+        filename: 'index.bundle.js',
+        path: path.resolve(__dirname, '../wwwroot/js'),
+        scriptType: 'text/javascript'
+    },
 };
 
 ////const path = require("path");

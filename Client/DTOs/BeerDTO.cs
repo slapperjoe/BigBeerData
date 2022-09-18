@@ -2,10 +2,10 @@
 {
 	public class BeerDTO
 	{
-		public string name { get; set; }
-		public string brewer { get; set; }
-		public string description { get; set; }
-		public decimal schooner { get; set; }
-		public decimal growler { get; set; }	
-	}
+		public string name { get; set; } = default!;
+		public string brewer { get; set; } = default!;
+		public string description { get; set; } = default!;
+        public decimal schooner { get; set; } = default!;
+        public decimal growler { get; set; } = default!;
+    }
 }

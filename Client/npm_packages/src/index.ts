@@ -2,13 +2,6 @@
 import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl"
 import { Texture2D, CylinderGeometry, readPixelsToArray } from "@luma.gl/core"
 
-
-
-
-window.addEventListener('resize', function () {
-    window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
-});
-
 window.interop = {
     dotNet: null,
     deck: null,
@@ -325,6 +318,10 @@ window.interop = {
     }
 
 };
+
+window.addEventListener('resize', function () {
+    window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
+});
 
 function throwOnGLError(err, funcName, args) {
     //@ts-ignore

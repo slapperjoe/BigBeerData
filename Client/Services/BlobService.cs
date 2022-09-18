@@ -11,7 +11,7 @@ namespace Client.Services
 
         public BlobService(IConfiguration configuration)
         {
-            _blobConnectionString = configuration.GetConnectionString("BlobStore");
+            _blobConnectionString = configuration.GetConnectionString("BlobStore") ?? String.Empty;
         }
 
         public async Task<List<BlobDto>> GetBlobFiles()
@@ -50,7 +50,7 @@ namespace Client.Services
                 return contentDto;
             }
 
-            return null;
+            throw new FileLoadException();
         }
 
         public async Task<Azure.Response<BlobContentInfo>> UploadBlobAsync(string fileName, Stream stream)

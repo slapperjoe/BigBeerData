@@ -1,4 +1,5 @@
 ﻿@page "/tochka"
+@namespace Client.Pages
 
 <PageTitle>Tochka</PageTitle>
 
@@ -9,6 +10,7 @@
 @using System.Web
 @using System.Net.Http.Headers
 @using System.Text.Json
+@using MudBlazor
 @inject HttpClient Http
 @inject Services.BlobService BlobData
 @inject Services.BrowserService Browser
@@ -46,7 +48,7 @@
 				string tapLabel = "Tap " + localIndex;
 				string fileBox = "fileInput" + localIndex;
 
-				<span style="text-align: center; position: relative;">
+				<div style="text-align: center; position: relative;">
 					<InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e)" hidden accept="image/png, image/gif, image/jpeg" />
 
 					<MudFab HtmlTag="label"
@@ -63,15 +65,15 @@
 					<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="updateChanged" />
 					<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="updateChanged" />
 
-					<div id='@($"loadingBox{localIndex}")' class="tapLoadBox" style="display: none;" @ref=imageRef[localIndex]>	</div>
-				</span>
+					<div id='@($"loadingBox{localIndex}")' class="tapLoadBox" style="display: none;" @ref=imageRef[localIndex-1]>	</div>
+				</div>
 				@if (costList.Count() == TAP_COUNT)
 				{
 					dataBound = true;
 				}
 			}
 		}
-		catch (Exception e)
+		catch (Exception)
 		{
 			var f = i;
 			var bob = costList;
@@ -93,7 +95,7 @@
 
 	const int TAP_COUNT = 6;
 
-	ElementReference[] imageRef { get; set; } = new ElementReference[8];
+	ElementReference[] imageRef { get; set; } = new ElementReference[TAP_COUNT];
 	List<BeerDTO> costList = new List<BeerDTO>();
 	IDictionary<int, IBrowserFile> filesD = new Dictionary<int, IBrowserFile>();
 
@@ -103,6 +105,7 @@
 	bool dataChanged = false;
 	bool dataBound = false;
 
+
 	protected override async Task OnInitializedAsync()
 	{
 		for (int i = 0; i < TAP_COUNT; i++)
@@ -110,7 +113,7 @@
 			try
 			{
 				var result = await Http.GetFromJsonAsync<BeerDTO>($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i + 1}.json");
-				costList.Add(result);
+				costList.Add(result ?? new BeerDTO());
 			}
 			catch (Exception e)
 			{
