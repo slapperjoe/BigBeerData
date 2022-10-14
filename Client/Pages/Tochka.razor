@@ -56,7 +56,7 @@
 						Icon="@Icons.Filled.Image"
 						label="@tapLabel"
 						for="@fileBox" />
-					<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToUniversalTime()}")'
+					<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToBinary()}")'
 							Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
 
 					<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="updateChanged" />

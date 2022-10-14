@@ -39,7 +39,6 @@ namespace Api.FileOps
                 sb.Append(md5[i].ToString("x2"));
             }
             string sMD5 = sb.ToString();
-            BlobClient blobClient = new(uri);
 
             string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
             try
