@@ -31,7 +31,14 @@ namespace Api.FileOps
             IDictionary<string, string> metaData) // user-defined blob metadata
         {
             byte[] md5 = MD5.HashData(blob.ToArray());
-            string sMD5 = Encoding.UTF8.GetString(md5);
+            //string sMD5 = Encoding.UTF8.GetString(md5);
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < md5.Length; i++)
+            {
+                sb.Append(md5[i].ToString("x2"));
+            }
+            string sMD5 = sb.ToString();
             BlobClient blobClient = new(uri);
 
             string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
