@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<toast tap-number="1">
+  <visual>
+    <binding template="ToastGeneric">
+      <image placement="appLogoOverride" hint-crop="circle" src="https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/1.png"/>
+      <text id="1">A beer has been updated on tap #1</text>
+    </binding>
+  </visual>
+</toast>

@@ -9,6 +9,10 @@ using System.Security.Cryptography;
 using Azure.Storage.Blobs.Specialized;
 using System.Text;
 
+using Microsoft.Azure.NotificationHubs;
+using System.Diagnostics;
+using System.Xml;
+
 namespace Api.FileOps
 {
     public class FileChanged
@@ -40,7 +44,8 @@ namespace Api.FileOps
             }
             string sMD5 = sb.ToString();
 
-            string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
+            string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") 
+                ?? String.Empty;
             try
             {
                 var blobServiceClient = new BlobServiceClient(storageConnectionString);
@@ -49,7 +54,6 @@ namespace Api.FileOps
 
                 BlockBlobClient cloudBlockBlob = cloudBlobContainer.GetBlockBlobClient(name);
 
-                //_logger.LogInformation($"C# Blob trigger function Processed blob\n Name: {path}");
                 if (metaData != null && metaData.ContainsKey(MD5Key) && metaData[MD5Key] == sMD5)
                 {
                     // old content
@@ -62,6 +66,23 @@ namespace Api.FileOps
                         { MD5Key, sMD5 ?? String.Empty }
                     };
                     await cloudBlockBlob.SetMetadataAsync(metadata);
+
+                    NotificationHubClient clientHub = NotificationHubClient
+                        .CreateClientFromConnectionString("Endpoint=sb://BigBeerHub.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=05Q8T0gXQ2QxcP25woaXMtbEqAQP8NOGolQO0+FMUlU=", "TappAppUpdates");
+
+                    XmlDocument beerToast = new();
+                    beerToast.Load("./datastore/BeerUpdate.xml");
+
+                    string tap = name.Substring(0, name.IndexOf('.'));
+
+                    XmlNode textNode = beerToast.SelectSingleNode("/toast/visual/binding/text");
+                    textNode.InnerText = $"A beer has been updated on tap #{tap}";
+
+                    XmlNode imageNode = beerToast.SelectSingleNode("/toast/visual/binding/image");
+                    ((XmlElement)imageNode).SetAttribute("src", $"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{tap}.png?m={DateTime.Now.ToBinary()}");
+
+                    var notificationResult = await clientHub.SendWindowsNativeNotificationAsync(beerToast.InnerXml);
+                   
                 }
             } catch (Exception e)
             {
