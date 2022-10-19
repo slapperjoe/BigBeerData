@@ -2,7 +2,7 @@
 
 namespace BigBeerData.Shared.Migrations
 {
-    public partial class calccol : Migration
+    public partial class CalcCol : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {

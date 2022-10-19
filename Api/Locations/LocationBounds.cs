@@ -17,6 +17,7 @@ namespace App2.Locations
         {
 
             _logger = loggerFactory.CreateLogger<LocationBounds>();
+            this._context = context;
         }
 
         [Function("LocationBounds")]

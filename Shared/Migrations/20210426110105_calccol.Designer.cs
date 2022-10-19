@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BigBeerData.Shared.Migrations
 {
     [DbContext(typeof(BigBeerContext))]
-    [Migration("20210426110105_calccol")]
-    partial class calccol
+    [Migration("20210426110105_calcCol")]
+    partial class CalcCol
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

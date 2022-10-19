@@ -24,13 +24,13 @@ namespace BigBeerData.Shared
         public string label { get; set; }
     }
 
-    public class UniformData
-    {
+    //public class UniformData
+    //{
 
-        List<object> outSliceLength;
-        List<object> outSliceData;
-        List<object> colourMap;
+    //    List<object> outSliceLength;
+    //    List<object> outSliceData;
+    //    List<object> colourMap;
 
-    }
+    //}
 }
 
