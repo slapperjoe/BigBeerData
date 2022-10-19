@@ -15,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.5.0
         with:
           submodules: true
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2.5.0
+        uses: actions/setup-node@v3.5.1
         with:
           node-version: '16.13.0'
       - run: sudo apt-get install nodejs
