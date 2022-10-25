@@ -22,22 +22,22 @@
 
 <style>
 	.fluid {
-			width: 100%;
-			height: auto;
+		 width: 100%;
+		 height: auto;
 	}
 
 	.tapLoadBox {
-			width: 100%;
-			height: 100%;
-			background-color: rgba(0,0,0, 0.5);
-			position: absolute;
-			top: 0px;
-			border-radius: 5px;
+		 width: 100%;
+		 height: 100%;
+		 background-color: rgba(0,0,0, 0.5);
+		 position: absolute;
+		 top: 0px;
+		 border-radius: 5px;
 	}
 </style>
 
 
-<div class="control-section d-flex flex-grow-1 flex-row gap-4" style="height: 100%; padding: 16px;">
+<MudGrid>
 	@for (int i = 0; i < TAP_COUNT; i++)
 	{
 		try
@@ -48,25 +48,30 @@
 				string tapLabel = "Tap " + localIndex;
 				string fileBox = "fileInput" + localIndex;
 
-				<div style="text-align: center; position: relative;">
-					<InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e)" hidden accept="image/png, image/gif, image/jpeg" />
+				<MudItem xs="12" md="6" lg="4">
+					<MudPaper Outlined="true" style=" text-align: center; position: relative; padding: 16px;" >
+						<InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e)" hidden accept="image/png, image/gif, image/jpeg" />
 
-					<MudFab HtmlTag="label"
-						Color="Color.Dark"
-						Icon="@Icons.Filled.Image"
-						label="@tapLabel"
-						for="@fileBox" />
-					<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToBinary()}")'
-							Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
+						<MudFab HtmlTag="label"
+						  Color="Color.Dark"
+						  Icon="@Icons.Filled.Image"
+						  label="@tapLabel"
+						  for="@fileBox" />											
+						<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToBinary()}")'
+						 Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
 
-					<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="updateChanged" />
-					<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" TextChanged="updateChanged" />
-					<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="updateChanged" />
-					<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="updateChanged" />
-					<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="updateChanged" />
+						<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
+						<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
+						<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" OnBlur="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+						<MudNumericField @bind-Value="costList[localIndex-1].squealer" Label="Squealer" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+						<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+						<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 
-					<div id='@($"loadingBox{localIndex}")' class="tapLoadBox" style="display: none;" @ref=imageRef[localIndex-1]>	</div>
-				</div>
+						<div id='@($"loadingBox{localIndex}")' class="tapLoadBox" style="display: none;" @ref=imageRef[localIndex-1]>	</div>
+
+						<MudButton Style="@costList[localIndex-1].visStyle" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success">Upload Changes</MudButton>
+					</MudPaper>
+				</MudItem>
 				@if (costList.Count() == TAP_COUNT)
 				{
 					dataBound = true;
@@ -80,15 +85,7 @@
 		}
 	}
 
-</div>
-
-
-@if (dataChanged)
-{
-	<div class="d-flex flex-grow-1 flex-row-reverse">
-		<MudButton Style="float: right;" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success">Upload Changes</MudButton>
-	</div>
-}
+</MudGrid>
 
 @code {
 
@@ -101,8 +98,9 @@
 	List<File> files = new List<File>();
 	List<UploadResult> uploadResults = new List<UploadResult>();
 	bool upload = false;
-	bool dataChanged = false;
 	bool dataBound = false;
+
+	bool readyForUpdate = false;
 
 
 	protected override async Task OnInitializedAsync()
@@ -111,7 +109,7 @@
 		{
 			try
 			{
-				var result = await Http.GetFromJsonAsync<BeerDTO>($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i + 1}.json");
+				var result = await Http.GetFromJsonAsync<BeerDTO>($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{i + 1}.json?m={DateTime.Now.ToBinary()}");
 				costList.Add(result ?? new BeerDTO());
 			}
 			catch (Exception e)
@@ -124,14 +122,18 @@
 
 	protected override void OnAfterRender(bool firstRender)
 	{
+		if (!firstRender)
+		{
+			readyForUpdate = true;
+		}
 		base.OnAfterRender(firstRender);
 	}
 
-	protected void updateChanged(string value)
+	protected void updateChanged(string value, BeerDTO beerDTO)
 	{
-		if (dataBound)
+		if (readyForUpdate)
 		{
-			dataChanged = true;
+			beerDTO.changed = true;
 		}
 	}
 

@@ -1,7 +1,8 @@
 {
-  "name": "Some beer 5",
-  "brewer": "Brewery",
-  "description": "Beer Explanation",
-  "schooner": 12,
-  "growler":  40
+	"name": "Some beer 5",
+	"brewer": "Brewery",
+	"description": "Beer Explanation",
+	"schooner": 12,
+	"squealer": 22,
+	"growler": 40
 }
