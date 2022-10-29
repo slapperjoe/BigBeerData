@@ -19,6 +19,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Azure.NotificationHubs;
 using System.Xml;
+using ImageMagick;
 
 namespace Api.FileOps
 {
@@ -62,9 +63,17 @@ namespace Api.FileOps
 						await file.FileStream.CopyToAsync(ms);
 						ms.Position = 0;
 
-						await cloudBlockBlob.UploadAsync(ms);
+						using (var bmp = new MagickImage(ms))
+						{
+							using (var memStream = new MemoryStream())
+							{
+								bmp.Format = MagickFormat.Png;
+								bmp.Write(memStream);
+								await cloudBlockBlob.UploadAsync(memStream);
 
-						await this.GenerateNotification(ms, cloudBlockBlob, file.FileName);
+								await this.GenerateNotification(memStream, cloudBlockBlob, file.FileName);
+							}
+						}						
 
 						var props = await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = data.ContentType });
 					}
