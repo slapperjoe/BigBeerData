@@ -19,7 +19,11 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Azure.NotificationHubs;
 using System.Xml;
-using ImageMagick;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Png;
+using static System.Net.Mime.MediaTypeNames;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Api.FileOps
 {
@@ -43,11 +47,13 @@ namespace Api.FileOps
 
 			var reader = new MultipartReader(boundary, req.Body);
 
-			var data = await reader.ReadNextSectionAsync();
+			var data = await reader.ReadNextSectionAsync();			
 
 			while (data != null)
 			{
 				var file = data.AsFileSection();
+
+				var pngName = file.FileName.Substring(0, file.FileName.IndexOf('.')) + ".png";
 				using (MemoryStream ms = new())
 				{
 					string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
@@ -58,24 +64,22 @@ namespace Api.FileOps
 						var cloudBlobContainer = blobServiceClient.GetBlobContainerClient("bigbeercontainer");
 						await cloudBlobContainer.CreateIfNotExistsAsync();
 
-						BlockBlobClient cloudBlockBlob = cloudBlobContainer.GetBlockBlobClient(file.FileName);
+						BlockBlobClient cloudBlockBlob = cloudBlobContainer.GetBlockBlobClient(pngName);
 
 						await file.FileStream.CopyToAsync(ms);
 						ms.Position = 0;
-
-						using (var bmp = new MagickImage(ms))
+						MemoryStream ms2 = new();
+						using (Image img = Image.Load(ms))
 						{
-							using (var memStream = new MemoryStream())
-							{
-								bmp.Format = MagickFormat.Png;
-								bmp.Write(memStream);
-								await cloudBlockBlob.UploadAsync(memStream);
+							img.Save(ms2, new PngEncoder());
+						}
 
-								await this.GenerateNotification(memStream, cloudBlockBlob, file.FileName);
-							}
-						}						
+						ms2.Position = 0;
+						var resp = await cloudBlockBlob.UploadAsync(ms2);
 
-						var props = await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = data.ContentType });
+						await this.GenerateNotification(ms2, cloudBlockBlob, pngName);
+
+						var props = await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = "image/png" });
 					}
 					catch (Exception ex)
 					{
