@@ -1,8 +1,5 @@
-using System.Collections.Generic;
-using System.Net;
 
-using System.Net.Http;
-using System.Reflection.PortableExecutable;
+using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -11,18 +8,13 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.WebUtilities;
-using Azure.Core;
 using Api.Helpers;
 using Microsoft.Net.Http.Headers;
-using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Azure.NotificationHubs;
 using System.Xml;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Png;
-using static System.Net.Mime.MediaTypeNames;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Api.FileOps
