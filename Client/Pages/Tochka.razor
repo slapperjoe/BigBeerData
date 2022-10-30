@@ -5,12 +5,15 @@
 
 @using BigBeerData.Shared
 @using Client.DTOs
+@using BigBeerData.Shared.DTOs
 @using System.Net.Http
 @using System.Threading
 @using System.Web
 @using System.Net.Http.Headers
 @using System.Text.Json
 @using MudBlazor
+@using System.Text;
+
 @inject HttpClient Http
 @inject Services.BlobService BlobData
 @inject Services.BrowserService Browser
@@ -62,20 +65,22 @@
 
 						<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 						<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
-						<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" OnBlur="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+						<MudTextField @bind-Value="costList[localIndex-1].beerType" Label="Type" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
+						<MudNumericField @bind-Value="costList[localIndex-1].percentage" Label="Percentage" Variant="Variant.Text" T="decimal" Step="(decimal)0.001" Format="P1" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+						<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudNumericField @bind-Value="costList[localIndex-1].squealer" Label="Squealer" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 
+						@if (costList[localIndex - 1].changed){
+							<MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success" OnClick="() => UpdateData(localIndex)" >Upload Changes</MudButton>
+						}
+						
 						<div id='@($"loadingBox{localIndex}")' class="tapLoadBox" style="display: none;" @ref=imageRef[localIndex-1]>	</div>
 
-						<MudButton Style="@costList[localIndex-1].visStyle" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success">Upload Changes</MudButton>
+						
 					</MudPaper>
 				</MudItem>
-				@if (costList.Count() == TAP_COUNT)
-				{
-					dataBound = true;
-				}
 			}
 		}
 		catch (Exception)
@@ -98,10 +103,8 @@
 	List<File> files = new List<File>();
 	List<UploadResult> uploadResults = new List<UploadResult>();
 	bool upload = false;
-	bool dataBound = false;
 
 	bool readyForUpdate = false;
-
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -135,6 +138,21 @@
 		{
 			beerDTO.changed = true;
 		}
+	}
+
+	private async void UpdateData(int i)
+	{
+		var loadBox = imageRef[i - 1];
+		await Browser.ShowLoadBox(loadBox);
+
+		var toUpdate = costList[i-1];
+		var js = JsonSerializer.Serialize(toUpdate);
+
+		var response =
+			await Http.PostAsync("http://localhost:7071/api/DataUpload", new StringContent(JsonSerializer.Serialize(toUpdate), Encoding.UTF8, "application/json"));
+		toUpdate.changed = false;
+		await Browser.HideLoadBox(loadBox);
+		StateHasChanged();
 	}
 
 	private async void UploadFiles(int i, InputFileChangeEventArgs e)
@@ -200,10 +218,7 @@
 
 			}
 		}
-
 	}
-
-
 
 	private static bool FileUpload(IList<UploadResult> uploadResults,
 			string? fileName, ILogger<Tochka> logger, out UploadResult result)

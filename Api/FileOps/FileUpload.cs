@@ -16,6 +16,9 @@ using Microsoft.Azure.NotificationHubs;
 using System.Xml;
 using SixLabors.ImageSharp.Formats.Png;
 using Image = SixLabors.ImageSharp.Image;
+using Newtonsoft.Json;
+using BigBeerData.Shared.DTOs;
+using BigBeerData.Shared;
 
 namespace Api.FileOps
 {
@@ -31,7 +34,7 @@ namespace Api.FileOps
 		}
 
 		[Function("FileUpload")]
-		public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
+		public async Task<HttpResponseData> RunFileUpload([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
 		{
 
 			var boundary = MultipartRequestHelper.GetBoundary(
@@ -39,7 +42,7 @@ namespace Api.FileOps
 
 			var reader = new MultipartReader(boundary, req.Body);
 
-			var data = await reader.ReadNextSectionAsync();			
+			var data = await reader.ReadNextSectionAsync();
 
 			while (data != null)
 			{
@@ -92,6 +95,49 @@ namespace Api.FileOps
 			return response;
 		}
 
+		[Function("DataUpload")]
+		public async Task<HttpResponseData> RunDataUpload([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req)
+		{
+			var jsonString = await new StreamReader(req.Body).ReadToEndAsync();
+
+			var beerDto = JsonConvert.DeserializeObject<BeerDTO>(jsonString);
+
+			string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
+			try
+			{
+				string fileName = beerDto.tapNo + ".json";
+				var blobServiceClient = new BlobServiceClient(storageConnectionString);
+
+				var cloudBlobContainer = blobServiceClient.GetBlobContainerClient("bigbeercontainer");
+				await cloudBlobContainer.CreateIfNotExistsAsync();
+
+				BlockBlobClient cloudBlockBlob = cloudBlobContainer.GetBlockBlobClient(fileName);
+
+				req.Body.Position = 0;
+				var resp = await cloudBlockBlob.UploadAsync(req.Body);
+				var props = await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = "application/json" });
+
+				req.Body.Position = 0;
+
+
+				await this.SendNotification(cloudBlockBlob, fileName);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				var errorresponse = req.CreateResponse(HttpStatusCode.InternalServerError);
+				errorresponse.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+				errorresponse.WriteString(ex.Message);
+				return errorresponse;
+			}
+
+			var response = req.CreateResponse(HttpStatusCode.OK);
+			response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+
+			response.WriteString("Uploaded to Storage Blob");
+			return response;
+		}
+
 		protected async Task GenerateNotification(MemoryStream ms, BlockBlobClient blob, string name)
 		{
 			ms.Position = 0;
@@ -107,40 +153,40 @@ namespace Api.FileOps
 
 			try
 			{
-
 				var metadata = new Dictionary<string, string>
 										{
 												{ MD5Key, sMD5 ?? String.Empty }
 										};
 				await blob.SetMetadataAsync(metadata);
-
-				NotificationHubClient clientHub = NotificationHubClient
-						.CreateClientFromConnectionString("Endpoint=sb://BigBeerHub.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=05Q8T0gXQ2QxcP25woaXMtbEqAQP8NOGolQO0+FMUlU=", "TappAppUpdates");
-
-				XmlDocument beerToast = new();
-				beerToast.Load("./datastore/BeerUpdate.xml");
-
-				string tap = name.Substring(0, name.IndexOf('.'));
-
-				XmlNode? textNode = beerToast.SelectSingleNode("/toast/visual/binding/text");
-				if (textNode != null)
-				{
-					textNode.InnerText = $"A beer has been updated on tap #{tap}";
-				}
-				XmlNode? imageNode = beerToast.SelectSingleNode("/toast/visual/binding/image");
-				if (imageNode != null)
-				{
-					((XmlElement)imageNode).SetAttribute("src", $"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{tap}.png?m={DateTime.Now.ToBinary()}");
-				}
-				var notificationResult = await clientHub.SendWindowsNativeNotificationAsync(beerToast.InnerXml);
-
-
+				var outcome = await SendNotification(blob, name);
 			}
 			catch (Exception e)
 			{
 				_logger.LogError(e, "Error checking upload");
 			}
 
+		}
+
+		protected async Task<NotificationOutcome> SendNotification(BlockBlobClient blob, string name) {
+			NotificationHubClient clientHub = NotificationHubClient
+							.CreateClientFromConnectionString("Endpoint=sb://BigBeerHub.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=05Q8T0gXQ2QxcP25woaXMtbEqAQP8NOGolQO0+FMUlU=", "TappAppUpdates");
+
+			XmlDocument beerToast = new();
+			beerToast.Load("./datastore/BeerUpdate.xml");
+
+			string tap = name.Substring(0, name.IndexOf('.'));
+
+			XmlNode? textNode = beerToast.SelectSingleNode("/toast/visual/binding/text");
+			if (textNode != null)
+			{
+				textNode.InnerText = $"A beer has been updated on tap #{tap}";
+			}
+			XmlNode? imageNode = beerToast.SelectSingleNode("/toast/visual/binding/image");
+			if (imageNode != null)
+			{
+				((XmlElement)imageNode).SetAttribute("src", $"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{tap}.png?m={DateTime.Now.ToBinary()}");
+			}
+			return await clientHub.SendWindowsNativeNotificationAsync(beerToast.InnerXml);
 		}
 	}
 }

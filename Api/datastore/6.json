@@ -1,8 +1,11 @@
 {
+	"tapNo": 6,
 	"name": "Some beer 6",
 	"brewer": "Brewery",
 	"description": "Beer Explanation",
 	"schooner": 13,
 	"squealer": 24,
-	"growler": 42
+	"growler": 42,
+	"beerType": "IPA",
+	"percentage": 0.075
 }
