@@ -21,8 +21,6 @@
 
 @inject IJSRuntime JSRuntime
 
-
-
 <style>
 	.fluid {
 		 width: 100%;
@@ -37,6 +35,15 @@
 		 top: 0px;
 		 border-radius: 5px;
 	}
+
+	.mud-slider {
+		 margin-top: -8px;
+	}
+
+		 .mud-slider .mud-slider-container {
+			  padding-left: 24px;
+			  padding-right: 24px;
+		 }
 </style>
 
 
@@ -52,33 +59,43 @@
 				string fileBox = "fileInput" + localIndex;
 
 				<MudItem xs="12" md="6" lg="4">
-					<MudPaper Outlined="true" style=" text-align: center; position: relative; padding: 16px;" >
+					<MudPaper Outlined="true" style=" text-align: center; position: relative; padding: 16px; height: 100%; display: flex; flex-direction: column;">
 						<InputFile id="@fileBox" OnChange="(e) => UploadFiles(localIndex, e)" hidden accept="image/png, image/gif, image/jpeg" />
 
 						<MudFab HtmlTag="label"
-						  Color="Color.Dark"
-						  Icon="@Icons.Filled.Image"
-						  label="@tapLabel"
-						  for="@fileBox" />											
+					  Color="Color.Dark"
+					  Icon="@Icons.Filled.Image"
+					  label="@tapLabel"
+					  for="@fileBox" />
 						<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToBinary()}")'
 						 Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
+
+						<MudElement Style="flex-grow: 1"></MudElement>
+
 
 						<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 						<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 						<MudTextField @bind-Value="costList[localIndex-1].beerType" Label="Type" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
-						<MudNumericField @bind-Value="costList[localIndex-1].percentage" Label="Percentage" Variant="Variant.Text" T="decimal" Step="(decimal)0.001" Format="P1" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+						@*<MudNumericField @bind-Value="costList[localIndex-1].percentage" Label="Percentage" Variant="Variant.Text" T="double" Step="(double)0.001" Format="P" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />*@
+						<MudSlider @bind-Value="costList[localIndex-1].percentage" Min="0" Max="0.12" Step="0.001" Color="Color.Dark">
+							<div style="text-align: left;">
+								<span style="font-size: 75%;">Percentage:</span><br />
+								@costList[localIndex-1].percentage.ToString("P2")
+							</div>
+						</MudSlider>
 						<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudNumericField @bind-Value="costList[localIndex-1].squealer" Label="Squealer" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 
-						@if (costList[localIndex - 1].changed){
-							<MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success" OnClick="() => UpdateData(localIndex)" >Upload Changes</MudButton>
+						@if (costList[localIndex - 1].changed)
+						{
+							<MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.CloudUpload" Color="Color.Success" OnClick="() => UpdateData(localIndex)">Upload Changes</MudButton>
 						}
-						
+
 						<div id='@($"loadingBox{localIndex}")' class="tapLoadBox" style="display: none;" @ref=imageRef[localIndex-1]>	</div>
 
-						
+
 					</MudPaper>
 				</MudItem>
 			}
@@ -145,12 +162,13 @@
 		var loadBox = imageRef[i - 1];
 		await Browser.ShowLoadBox(loadBox);
 
-		var toUpdate = costList[i-1];
+		var toUpdate = costList[i - 1];
+		toUpdate.changed = false;
 		var js = JsonSerializer.Serialize(toUpdate);
 
 		var response =
-			await Http.PostAsync("http://localhost:7071/api/DataUpload", new StringContent(JsonSerializer.Serialize(toUpdate), Encoding.UTF8, "application/json"));
-		toUpdate.changed = false;
+			await Http.PostAsync("api/DataUpload", new StringContent(JsonSerializer.Serialize(toUpdate), Encoding.UTF8, "application/json"));
+
 		await Browser.HideLoadBox(loadBox);
 		StateHasChanged();
 	}
@@ -203,7 +221,7 @@
 		{
 
 			var response =
-					await Http.PostAsync("http://localhost:7071/api/FileUpload",
+					await Http.PostAsync("api/FileUpload",
 					content);
 
 			if (response.IsSuccessStatusCode)

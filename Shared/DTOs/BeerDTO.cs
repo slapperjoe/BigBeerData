@@ -11,7 +11,7 @@
 		public decimal growler { get; set; } = default!;
 
 		public string beerType { get; set; } = default!;
-		public decimal percentage { get; set; } = default!;
+		public double percentage { get; set; } = default!;
 
 		public bool changed
 		{
