@@ -86,7 +86,7 @@
 						<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudNumericField @bind-Value="costList[localIndex-1].squealer" Label="Squealer" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
 						<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
-						<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
+						@*<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />*@
 
 						@if (costList[localIndex - 1].changed)
 						{
