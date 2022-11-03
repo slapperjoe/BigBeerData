@@ -123,11 +123,12 @@ namespace Api.FileOps
 				await this.SendNotification(cloudBlockBlob, fileName);
 			}
 			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
+			{				
 				var errorresponse = req.CreateResponse(HttpStatusCode.InternalServerError);
 				errorresponse.Headers.Add("Content-Type", "text/plain; charset=utf-8");
 				errorresponse.WriteString(ex.Message);
+				errorresponse.WriteString(ex.StackTrace ?? "No stack trace");
+				//_logger.LogError(ex.Message);
 				return errorresponse;
 			}
 
