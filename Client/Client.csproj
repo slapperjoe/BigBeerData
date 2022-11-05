@@ -45,6 +45,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="wwwroot\dl\TapApp.appxbundle">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Update="wwwroot\img\onthebeers.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
