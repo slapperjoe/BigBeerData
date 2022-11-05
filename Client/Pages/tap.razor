@@ -1,0 +1,16 @@
+﻿<h3>TapApp</h3>
+
+@code {
+
+}
+@page "/tap"
+@inject NavigationManager NavManager
+
+<h1>Redirecting to download</h1>
+
+@code {
+   protected override void OnInitialized()
+   {
+      NavManager.NavigateTo("/dl/TapApp.appxbundle");
+   }
+}
