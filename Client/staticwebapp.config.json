@@ -6,8 +6,8 @@
 	},
 	"routes": [
 		{
-			"route": "/get*",
-			"rewrite": "/dl/TapApp.appxbundle"
+			"route": "/get",
+			"redirect": "/dl/TapApp.appxbundle"
 		}
 	]
 }
