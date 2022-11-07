@@ -67,7 +67,7 @@
 					  Icon="@Icons.Filled.Image"
 					  label="@tapLabel"
 					  for="@fileBox" />
-					  <MudElement Style="flex: 100000"></MudElement>
+						<MudElement Style="flex: 100000"></MudElement>
 						<MudImage Fluid="true" Src='@($"https://cs1c08048ede1dax4ddbx836.blob.core.windows.net/bigbeercontainer/{localIndex}.png?m={DateTime.Now.ToBinary()}")'
 						 Alt="@tapLabel" Elevation="25" Class="rounded-lg" />
 
@@ -76,16 +76,24 @@
 						<MudTextField @bind-Value="costList[localIndex-1].name" Label="Name" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 						<MudTextField @bind-Value="costList[localIndex-1].brewer" Label="Brewer" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
 						<MudTextField @bind-Value="costList[localIndex-1].beerType" Label="Type" Variant="Variant.Text" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />
-						@*<MudNumericField @bind-Value="costList[localIndex-1].percentage" Label="Percentage" Variant="Variant.Text" T="double" Step="(double)0.001" Format="P" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />*@
-						<MudSlider @bind-Value="costList[localIndex-1].percentage" Min="0" Max="0.12" Step="0.001" Color="Color.Dark">
-							<div style="text-align: left;">
-								<span style="font-size: 75%;">Percentage:</span><br />
-								@costList[localIndex-1].percentage.ToString("P2")
-							</div>
-						</MudSlider>
-						<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
-						<MudNumericField @bind-Value="costList[localIndex-1].squealer" Label="Squealer" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
-						<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="decimal" Step="(decimal)0.5" Format="C2" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+						<MudGrid>							
+							<MudItem md="4">
+								<MudNumericField @bind-Value="costList[localIndex-1].schooner" Label="Schooner" Variant="Variant.Text" T="double" Step="0.5" Format="F2"
+										  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+							</MudItem>
+							<MudItem md="4">
+								<MudNumericField @bind-Value="costList[localIndex-1].squealer" Label="Squealer" Variant="Variant.Text" T="double" Step="0.5" Format="F2"
+										  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+							</MudItem>
+							<MudItem md="4">
+								<MudNumericField @bind-Value="costList[localIndex-1].growler" Label="Growler" Variant="Variant.Text" T="double" Step="0.5" Format="F2"
+										  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+							</MudItem>
+							<MudItem md="4">
+								<MudNumericField @bind-Value="costList[localIndex-1].percentage" Label="Percentage" Variant="Variant.Text" T="double" Format="F2" Min="0" Max="15" Step="0.1"
+										  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Percent" TextChanged="(t) => updateChanged(String.Empty, costList[localIndex-1])" />
+							</MudItem>
+						</MudGrid>
 						@*<MudTextField @bind-Value="costList[localIndex-1].description" Label="Description" Variant="Variant.Filled" Lines="5" TextChanged="(t) => updateChanged(t, costList[localIndex-1])" />*@
 
 						@if (costList[localIndex - 1].changed)

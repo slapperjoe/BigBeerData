@@ -1,5 +1,13 @@
 {
+	"trailingSlash": "auto",
 	"navigationFallback": {
-		"rewrite": "/"
-	}
+		"rewrite": "/",
+		"exclude": [ "/get*" ]
+	},
+	"routes": [
+		{
+			"route": "/get*",
+			"rewrite": "/dl/TapApp.appxbundle"
+		}
+	]
 }
