@@ -178,7 +178,7 @@ namespace Api.FileOps
 			string tap = name.Substring(0, name.IndexOf('.'));
 
 
-			((XmlAttribute)beerToast.SelectSingleNode("toast/@tap-number")).Value = tap;
+			(beerToast.SelectSingleNode("toast/@tap-number") as XmlAttribute).Value = tap;
 			XmlNode? textNode = beerToast.SelectSingleNode("/toast/visual/binding/text");
 			if (textNode != null)
 			{
