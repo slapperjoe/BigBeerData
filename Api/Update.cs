@@ -14,8 +14,8 @@ namespace Api
 	{
 		private readonly ILogger<Update> _logger;
 		private readonly IHttpClientFactory _httpClientFactory;
-		const string client_id = "046C4B60EFFB73F16B087B2319EAE8CBB5F44845";
-		const string client_secret = "3308A2DCF939C0B5E50EDB1B5CAE74C61BB82D12";
+		private string client_id;
+		private string client_secret;
 		const int MAX_REQUESTS = 100;
 		private readonly BigBeerContext _context;
 
@@ -23,6 +23,8 @@ namespace Api
 
 		public Update(BigBeerContext context, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
 		{
+			client_id = System.Environment.GetEnvironmentVariable("client_id") ?? String.Empty;
+			client_secret = System.Environment.GetEnvironmentVariable("client_secret") ?? String.Empty;
 			_logger = loggerFactory.CreateLogger<Update>();
 			_httpClientFactory = httpClientFactory;
 			_context = context;
