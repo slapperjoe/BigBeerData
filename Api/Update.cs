@@ -250,7 +250,7 @@ namespace Api
 			return alreadyAdded;
 		}
 
-		public async static Task<List<Checkin>> CheckinsGet(int id, HttpClient client, StreamWriter sw, int? max_id = null)
+		public async Task<List<Checkin>> CheckinsGet(int id, HttpClient client, StreamWriter sw, int? max_id = null)
 		{
 			var requestString = "venue/checkins/" + id + "?client_id=" + client_id +
 							"&client_secret=" + client_secret;
