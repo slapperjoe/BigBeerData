@@ -107,7 +107,7 @@
 		if (!updating && this.mainSite)
 		{
 			updating = true;
-			var updateData = await Http.PostAsync("api/UpdateSync", null);
+			var updateData = await Http.GetAsync("api/UpdateSync");
 			updating = false;
 		}
 	}
