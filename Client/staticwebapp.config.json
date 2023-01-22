@@ -5,9 +5,5 @@
 		"exclude": [ "/get*" ]
 	},
 	"routes": [
-		{
-			"route": "/get",
-			"redirect": "/dl/TapApp.appxbundle"
-		}
 	]
 }

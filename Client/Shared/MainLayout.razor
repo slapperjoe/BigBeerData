@@ -28,8 +28,14 @@
 	}
 	<MudMainContent>
 		<MudContainer MaxWidth="MaxWidth.False">
-			<CascadingValue name="parent" Value="this">
-				@Body
+			<CascadingValue name="parent" Value="this">			
+				@if (this.mainSite)
+				{
+					<Client.Pages.Index @ref="indexRef" />
+				} else
+				{					
+					@Body
+				}
 			</CascadingValue>
 		</MudContainer>
 	</MudMainContent>
@@ -44,7 +50,7 @@
 
 	bool mainSite
 	{
-		get { return this.RouteData.PageType.Name != "Tochka"; }
+		get { return this?.RouteData.PageType.Name != "Tochka"; }
 	}
 
 	void DrawerToggle()
@@ -101,7 +107,7 @@
 		if (!updating && this.mainSite)
 		{
 			updating = true;
-			var updateData = await Http.PostAsync("api/Update", null);
+			var updateData = await Http.PostAsync("api/UpdateSync", null);
 			updating = false;
 		}
 	}

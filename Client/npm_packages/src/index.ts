@@ -1,5 +1,5 @@
 ﻿import * as mapboxgl from "mapbox-gl"
-import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "deck.gl"
+import { TextLayer, ColumnLayer, FlyToInterpolator, ArcLayer, SimpleMeshLayer, Deck } from "@deck.gl/layers"
 import { Texture2D, CylinderGeometry, readPixelsToArray } from "@luma.gl/core"
 
 window.interop = {

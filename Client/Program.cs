@@ -14,6 +14,5 @@ builder.Services.AddMudServices();
 var baseAddress = builder.Configuration["BaseAddress"] ?? builder.HostEnvironment.BaseAddress;
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(baseAddress) });
 builder.Services.AddScoped<BrowserService>();
-builder.Services.AddScoped<BlobService>();
 
 await builder.Build().RunAsync();

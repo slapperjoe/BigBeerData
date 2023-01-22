@@ -3,7 +3,7 @@
     "BigBeerData": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "https://localhost:7168/Tochka",
+      "launchUrl": "https://localhost:7168/",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

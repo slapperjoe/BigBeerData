@@ -39,16 +39,32 @@ namespace Api
 			{
 				features.AllowSynchronousIO = true;
 			}
-			var response = new HttpResponseMessage
-			{
-				Content = new PushStreamContent(new Func<Stream, HttpContent, TransportContext, Task>(RunUpdate), "text/event-stream")
-			};
+			var response = new HttpResponseMessage();
+
+			response.Content = new PushStreamContent(async (stream, content, context) => await RunUpdate(stream, content, context), "text/event-stream");
 			response.Headers.TransferEncodingChunked = true;
 
 			return response;
 		}
 
-		public async Task RunUpdate(Stream stream, HttpContent content, TransportContext transContext)
+		[Function("UpdateSync")]
+		public async Task<HttpResponseMessage> RunSync([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequestData req)
+		{
+			_logger.LogInformation("C# HTTP trigger function processed a request.");
+
+			var stream = new MemoryStream();
+			await RunUpdate(stream, null, null);
+
+			var response = new HttpResponseMessage();
+
+			response.Content = new StreamContent(stream);
+
+			return response;
+		}
+
+
+
+		public async Task RunUpdate(Stream stream, HttpContent? content, TransportContext? transContext)
 		{
 			var optionsBuilder = new DbContextOptionsBuilder<BigBeerContext>();
 			optionsBuilder.UseSqlServer(_connectionString);

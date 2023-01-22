@@ -66,23 +66,6 @@ namespace Client.Services
             await _js.InvokeAsync<dynamic>("interop.SetMapState", styles);
             return true;
         }
-
-        public async Task<bool> RefreshImage(string imageFile)
-        {
-            await _js.InvokeAsync<dynamic>("interop.RefreshImage", imageFile + DateTime.Now.ToUniversalTime());
-            return true;
-        }
-
-        public async Task ShowLoadBox(ElementReference element)
-        {
-            await _js.InvokeVoidAsync("interop.ShowLoadBox", element);
-        }
-
-        public async Task HideLoadBox(ElementReference element)
-        {
-            await _js.InvokeVoidAsync("interop.HideLoadBox", element);
-        }
-
     }
 
     public class BrowserDimension
