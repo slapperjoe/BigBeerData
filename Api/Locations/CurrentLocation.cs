@@ -21,7 +21,7 @@ namespace Api.Locations
         }
 
         [Function("CurrentLocation")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "location/current")] 
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "location/current")] 
         HttpRequestData req)
         {
             var establishments = _context.Locations.Where(l => l.Establishments.Any());
