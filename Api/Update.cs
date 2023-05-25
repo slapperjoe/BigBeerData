@@ -32,7 +32,7 @@ namespace Api
 		}
 
 		[Function("Update")]
-		public HttpResponseMessage Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestData req)
+		public HttpResponseMessage Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequestData req)
 		{
 			_logger.LogInformation("C# HTTP trigger function processed a request.");
 
@@ -50,7 +50,7 @@ namespace Api
 		}
 
 		[Function("UpdateSync")]
-		public async Task<HttpResponseMessage> RunSync([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequestData req)
+		public async Task<HttpResponseMessage> RunSync([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequestData req)
 		{
 			_logger.LogInformation("C# HTTP trigger function processed a request.");
 

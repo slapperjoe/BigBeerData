@@ -21,7 +21,7 @@ namespace App2.Locations
         }
 
         [Function("LocationBounds")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get",Route = "Geo/bounds/{id}")] HttpRequestData req, long id)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get",Route = "Geo/bounds/{id}")] HttpRequestData req, long id)
         {
             _logger.LogInformation("Location Bounds called: id: {id}", id);  
             var locations = await _context.Establishments.Where(a => a.LocationId == id).ToListAsync();

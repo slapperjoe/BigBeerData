@@ -23,7 +23,7 @@ namespace App2.Locations
         }
 
         [Function("LocationBrewerStyles")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "Location/{id}/{style}/brewers")] HttpRequestData req, long id, string style)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Location/{id}/{style}/brewers")] HttpRequestData req, long id, string style)
         {
             
 

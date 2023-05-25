@@ -21,7 +21,7 @@ namespace App2.Locations
         }
 
         [Function("LocationStyles")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "Location/{id}/style")] HttpRequestData req, long id)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Location/{id}/style")] HttpRequestData req, long id)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
             
