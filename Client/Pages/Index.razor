@@ -88,7 +88,7 @@
 
 
             //await Service.InitDeckGL(bounds.CentreX, bounds.CentreY, ((int)Math.Floor(zoom)) - 1);
-            await Service.FlyTo(bounds?.CentreX ?? cntrLat, bounds?.CentreY ?? cntrLong, ((int)Math.Floor(zoom)) - 1);
+            await Service.FlyTo(cntrLat, cntrLong, ((int)Math.Floor(zoom)) - 1);
 
             await Service.UpdateStyles(locationStyles ?? new LocationStyle[0]);
             await Service.AddColumnChartPoint(zoom);
