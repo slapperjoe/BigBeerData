@@ -17,15 +17,6 @@
     <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
     <UserSecretsId>f2e2f872-ee12-4604-827f-1379a8248738</UserSecretsId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="npm_packages\src\interfaces.js" />
-    <Content Include="npm_packages\src\interfaces.js.map" />
-    <Content Include="npm_packages\src\interfaces.ts" />
-    <Content Include="npm_packages\src\LayerExtensions.js" />
-    <Content Include="npm_packages\src\LayerExtensions.js.map" />
-    <Content Include="npm_packages\src\LayerExtensions.ts" />
-  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
     <PackageReference Include="Azure.Storage.Files.Shares" Version="12.17.1" />
@@ -33,7 +24,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.1" /> 
-    <PackageReference Include="MudBlazor" Version="6.11.1" />
+    <PackageReference Include="MudBlazor" Version="6.11.2" />
   </ItemGroup>
 
   <ItemGroup>

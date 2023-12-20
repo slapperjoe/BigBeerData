@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "removeComments": false,
+    "sourceMap": true,
+    "target": "ES2015",
+    "lib": [ "ESNext", "dom", "esnext.asynciterable", "DOM.Iterable", "ESNext.Array" ],
+    "moduleResolution": "Node",
+    "outDir": "../wwwroot/js",
+    "module": "es6",
+    "jsx": "react",
+    "allowJs": true
+  },
+  "include": [ "src/*.ts" ],
+  "exclude": [
+    "src/*.js",
+    "wwwroot/js/*",
+    "npm_packages/node_modules/*",
+    "webpack.config.js"
+  ]
+}
