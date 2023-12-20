@@ -48,6 +48,8 @@
 
 	public bool mcpSet = false;
 
+	static DotNetObjectReference<Index>? dotNetRef;
+
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -55,6 +57,8 @@
 		locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>("/api/location/1/style");
 		bounds = await Http.GetFromJsonAsync<GeoBounds>("/api/geo/bounds/1");
 		parent.setLoaded(true);
+
+		dotNetRef = DotNetObjectReference.Create(this);
 	}
 
 
@@ -87,14 +91,9 @@
 			parent.loaded = true;
 			TileMath.BestMapView(bounds?.ToDoubleArray(), Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
 
-			Console.WriteLine(cntrLat);
-			Console.WriteLine(cntrLong);
+			//var dotNetReference = DotNetObjectReference.Create(this);
 
-			var dotNetReference = DotNetObjectReference.Create(this);
-
-
-			//await Service.InitDeckGL(bounds.CentreX, bounds.CentreY, ((int)Math.Floor(zoom)) - 1);
-			await Service.FlyTo(cntrLat, cntrLong, ((int)Math.Floor(zoom)) - 1);
+			await Service.FlyTo(cntrLong, cntrLat, ((int)Math.Floor(zoom)) - 1);
 
 			await Service.UpdateStyles(locationStyles ?? new LocationStyle[0]);
 			await Service.AddColumnChartPoint(zoom);
@@ -113,10 +112,10 @@
 
 			TileMath.BestMapView(bounds.ToDoubleArray(), Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
 
-			var dotNetReference = DotNetObjectReference.Create(this);
+			//var dotNetReference = DotNetObjectReference.Create(this);
 
-			await Service.SetMapState(locationStyles ?? new LocationStyle[0], dotNetReference);
-			await Service.InitDeckGL(bounds.CentreX, bounds.CentreY, ((int)Math.Floor(zoom)) - 1);
+			await Service.SetMapState(locationStyles ?? new LocationStyle[0], dotNetRef);
+			await Service.InitDeckGL(cntrLong, cntrLat, ((int)Math.Floor(zoom)) - 1);
 
 			await Service.AddColumnChartPoint(zoom);
 

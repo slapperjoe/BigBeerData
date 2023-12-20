@@ -44,7 +44,7 @@ namespace BigBeerData.Shared
 		{
 			get
 			{
-				return this.West + this.DeltaX;
+				return this.West + (this.DeltaX/2);
 			}
 		}
 
@@ -60,7 +60,7 @@ namespace BigBeerData.Shared
 		{
 			get
 			{
-				return this.South + this.DeltaY;
+				return this.South + (this.DeltaY/2);
 			}
 		}
 
