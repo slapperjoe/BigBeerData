@@ -44,6 +44,8 @@ jobs:
           ###### End of Repository/Build Configurations ######
       - run: npm run prod
         working-directory: VisualisationInterop
+      - run: sudo npm install
+        working-directory: VisualisationInterop
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
