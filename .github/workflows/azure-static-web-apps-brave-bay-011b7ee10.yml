@@ -42,9 +42,9 @@ jobs:
           api_location: "Api" # Api source code path - optional
           output_location: "wwwroot" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-      - run: npm run prod
-        working-directory: VisualisationInterop
       - run: sudo npm install
+        working-directory: VisualisationInterop
+      - run: npm run prod
         working-directory: VisualisationInterop
 
   close_pull_request_job:
