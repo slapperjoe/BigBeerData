@@ -15,6 +15,8 @@
 - `WebApp/`: new Blazor Interactive Auto app scaffold (`WebApp.csproj`, `Program.cs`, components, minimal layout, wwwroot).
 - `BigBeerData.sln`: added `WebApp` and new `AppHost` projects to the solution.
 - `AppHost/`: initial Aspire host wiring `Api` and `WebApp` via `Aspire.Hosting.AppHost` package (version pinned to `8.0.0` — adjust to latest compatible release for .NET 10).
+- OTEL: `Api` and `WebApp` now include OpenTelemetry packages and configuration (OTLP exporter configurable via `OTLP_ENDPOINT`/`Telemetry:OtlpEndpoint`); `Api` includes HTTP client + EF instrumentation; `WebApp` includes ASP.NET Core + HTTP client instrumentation.
+- Streaming: `Api/Update` refactored to `HttpResponseData` SSE streaming (no `PushStreamContent`), and `RunUpdate` split for reduced complexity.
 
 ## Next steps
 - Wire Aspire AppHost to host Functions + WebApp, configure OTLP/console exporters.
