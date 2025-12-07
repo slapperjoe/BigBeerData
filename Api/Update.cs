@@ -147,6 +147,12 @@ namespace Api
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
+				if (checkin.Beer == null)
+				{
+					await sw.WriteLineAsync("Skipped checkin missing beer payload");
+					continue;
+				}
+
 				var existingBeer = db.Beers.FirstOrDefault(b => b.Bid == checkin.Beer.Bid);
 				if (existingBeer != null)
 				{

@@ -4,6 +4,7 @@ Quick context
 - Mono-repo .NET 8 solution `BigBeerData.sln` with two runnable apps:
   - `Api/` — Azure Functions (isolated worker) that scrapes Untappd and writes to SQL Server (`Api/Update.cs`).
   - `Client/` — Blazor WebAssembly UI (references `Shared/`).
+- Active intent: Port the `Client` UI into the `WebApp` Blazor app (with `WebApp.Client` for client-side components). Favor changes that move UI/API integration and shared components toward `WebApp`/`WebApp.Client` rather than further investing in the legacy `Client` project.
 
 Primary goals for an AI coding agent
 - Understand data flow: Untappd API -> `Api` function -> `Shared.BigBeerContext` (SQL Server) -> `Client` reads data via HTTP.

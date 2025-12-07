@@ -1,8 +1,7 @@
 ﻿import * as mapboxgl from "mapbox-gl"
-import { TextLayer, ColumnLayer, ArcLayer } from "@deck.gl/layers/typed"
+import { TextLayer } from "@deck.gl/layers/typed"
 import { FlyToInterpolator, Deck } from '@deck.gl/core/typed';
-import { Texture2D, CylinderGeometry, readPixelsToArray } from "@luma.gl/core"
-import { SimpleMeshLayer } from '@deck.gl/mesh-layers/typed';
+import * as oneChart from "./oneChart";
 
 window.interop = {
 	dotNet: null,
@@ -28,13 +27,13 @@ window.interop = {
 		selectedVenue: null,
 	},
 	setState: (stateObj) => {
-		delete window.interop.state._previousState;
-		window.interop.state._previousState = { ...window.interop.state };
-		window.interop.state = Object.assign(Object.assign(Object.assign({}, window.interop.state), stateObj), { _revision: (window.interop.state._revision + 1) });
-		//return this.state;		
-		window.interop.dotNet.invokeMethodAsync('SetState', window.interop.state)
-		return window.interop.state;
-		//fire change notifier
+		delete globalThis.interop.state._previousState;
+		globalThis.interop.state._previousState = { ...globalThis.interop.state };
+		globalThis.interop.state = { ...globalThis.interop.state, ...stateObj, _revision: (globalThis.interop.state._revision + 1) };
+		if (globalThis.interop.dotNet) {
+			globalThis.interop.dotNet.invokeMethodAsync('SetState', globalThis.interop.state);
+		}
+		return globalThis.interop.state;
 	},
 	getDimensions: () => {
 		return {
@@ -43,7 +42,7 @@ window.interop = {
 		};
 	},
 	getRenderArea: () => {
-		var renderArea = document.getElementById('renderArea');
+		const renderArea = document.getElementById('renderArea');
 		if (renderArea) {
 			return {
 				width: renderArea.clientWidth,
@@ -52,11 +51,11 @@ window.interop = {
 		}
 	},
 	consoleLog: (textString) => {
-		window.console.log(textString);
+		globalThis.console.log(textString);
 		return true;
 	},
 	hookDotNet: (dotNetObj) => {
-		window.interop.dotNet = dotNetObj;
+		globalThis.interop.dotNet = dotNetObj;
 	},
 	FlyTo: (longitude, latitude, zoom) => {
 		window.interop.deck.setProps({
@@ -177,131 +176,46 @@ window.interop = {
 		return true;
 	},
 	AddColumnChartPoint: (zoom) => {
-		if (window.interop.state.mapLoaded) {
-
-			const scale = 20;
-			var mapVals = window.interop.state.map;
-			var columnData = mapVals.map((a) => {
-				return a.styles.map(b => {
-					return {
-						centroid: [a.location.x, a.location.y, b.height * scale],
-						value: b.count,
-						name: b.name,
-						colour: window.interop.state.colourMap.find(c => c.name === b.name)?.colour,
-						venue: a.venue,
-						venuename: a.name
-					}
-				})
-			});
-			var flatData = columnData.flat();
-
-			window.interop.deck.setProps({
-				layers: [new ColumnLayer({
-					id: 'column-layer',
-					data: flatData,
-					diskResolution: 48,
-					radius: 50,
-					extruded: true,
-					autoHighlight: true,
-					pickable: true,
-					elevationScale: scale,
-					getPosition: d => d.centroid,
-					getFillColor: d => d.colour ? d.colour : [128, 128, 128, 192],
-					getLineColor: [0, 0, 0],
-					getElevation: d => d.value,
-					onClick: (a) => {
-						window.interop.dotNet.invokeMethodAsync('GetBrewersByVenue', a.object.venue, a.object.name)
-							.then((result) => {
-								window.interop.setState({
-									brewerMap: result,
-									selectedVenue: a.object
-								})
-
-								const arcLayer = new ArcLayer({
-									id: 'arc-layer',
-									data: result,
-									pickable: true,
-									getWidth: 4,
-									getSourcePosition: _ => [a.object.centroid[0], a.object.centroid[1]],
-									getTargetPosition: d => [d.location.x, d.location.y],
-									getSourceColor: a.object.colour,//d => [255, 214, 0],
-									getTargetColor: a.object.colour,
-									onClick: (a) => {
-										let locs = [a.object.location.x, a.object.location.y];
-										if (window.interop.state.viewingVenue) {
-											locs = a.layer.props["getSourcePosition"];
-										}
-										window.interop.FlyTo(locs[0], locs[1], window.interop.state.currentZoom)
-										window.interop.setState({ viewingVenue: !window.interop.state.viewingVenue })
-									}
-								});
-
-								const pieChartLayers = result.map(item => new SimpleMeshLayer({
-									id: 'piechart-layer-' + item.name,
-									data: [item],
-									texture: new Promise((resolve, reject) => {
-										let dataArray = [];
-										item.beersBrewed.forEach((bb, i) => {
-											for (var j = 0; j < bb.count; j++) {
-												bb.color = ColourValues[i];
-												dataArray.push(ColourValues[i])
-											}
-										});
-										const texture = new Texture2D(window.deckGLContext, {
-											width: item.beersBrewed.flatMap(a => a.count).reduce((a, b) => a + b, 0),
-											height: 1,
-											format: window.deckGLContext.RGB,
-											data: new Uint8Array(dataArray.flat()),
-											parameters: {
-												[window.deckGLContext.TEXTURE_MAG_FILTER]: window.deckGLContext.NEAREST,
-												[window.deckGLContext.TEXTURE_MIN_FILTER]: window.deckGLContext.NEAREST
-											},
-											pixelStore: {
-												[window.deckGLContext.UNPACK_FLIP_Y_WEBGL]: true
-											},
-											mipmaps: true
-										});
-										resolve(texture);
-									}),
-									onClick: (pI) => {
-										if (pI.coordinate) {
-											debugger;
-											const pixelColor = readPixelsToArray(pI.layer.props["image"], {
-												sourceX: pI.coordinate[0],//   bitmap.pixel[0],
-												sourceY: pI.coordinate[1],  //bitmap.pixel[1],
-												sourceWidth: 1,
-												sourceHeight: 1
-											})
-											console.log('Color at picked pixel:', pixelColor)
-										}
-									},
-									autoHighlight: true,
-									pickable: true,
-									mesh: new CylinderGeometry({ radius: 5, height: 1, topCap: true, nradial: 48, bottomCap: false }),
-									sizeScale: 16,
-									_useMeshColors: true,
-									getPosition: d => [d.location.x, d.location.y],
-									getColor: d => [255, 214, 0],
-									getOrientation: d => [0, 0, 270]
-								}))
-
-								const pieLabelLayer = generateNewTextLayer(zoom, window.interop.state.brewerMap, 'pie-text-layer', 128);
-								const layers = [window.interop.deck.props.layers[0], window.interop.deck.props.layers[1], arcLayer, pieChartLayers, pieLabelLayer].flat();
-								window.interop.setState({
-									viewingVenue: false
-								})
-								window.interop.deck.setProps({
-									layers: layers
-								});
-
-							});
-					}
-					//onHover: ({x, y, object}) => setTooltip(x, y, object ? `${object.name}\n${object.address}` : null)
-				}), generateNewTextLayer(zoom, window.interop.state.map, 'text-layer', 64)]
-			});
-			return true;
+		if (!globalThis.interop.state.mapLoaded) {
+			return false;
 		}
-		return false;
+
+		const scale = 20;
+		const columnData = oneChart.buildColumnData(globalThis.interop.state.map, globalThis.interop.state.colourMap, scale);
+		const columnLayer = oneChart.createColumnLayer(columnData, scale, (selected) => {
+			if (!globalThis.interop.dotNet) {
+				return;
+			}
+			globalThis.interop.dotNet.invokeMethodAsync('GetBrewersByVenue', selected.venue, selected.name)
+				.then((result) => {
+					globalThis.interop.setState({
+						brewerMap: result,
+						selectedVenue: selected
+					});
+
+					const arcLayer = oneChart.createArcLayer(selected, result, {
+						currentZoom: globalThis.interop.state.currentZoom,
+						viewingVenue: globalThis.interop.state.viewingVenue,
+						flyTo: globalThis.interop.FlyTo,
+						toggleViewing: (next) => globalThis.interop.setState({ viewingVenue: next })
+					});
+
+					const pieChartLayers = oneChart.createPieChartLayers(result, globalThis.deckGLContext as WebGLRenderingContext, oneChart.ColourValues);
+					const pieLabelLayer = generateNewTextLayer(zoom, globalThis.interop.state.brewerMap, 'pie-text-layer', 128);
+					const layers = [globalThis.interop.deck.props.layers[0], globalThis.interop.deck.props.layers[1], 
+										arcLayer, ...pieChartLayers, pieLabelLayer];
+					globalThis.interop.setState({ viewingVenue: false });
+					globalThis.interop.deck.setProps({
+						layers: layers
+					});
+
+				});
+		});
+
+		globalThis.interop.deck.setProps({
+			layers: [columnLayer, generateNewTextLayer(zoom, globalThis.interop.state.map, 'text-layer', 64)]
+		});
+		return true;
 	},
 	RefreshImage: async (imageElementId, url) => {
 		debugger;
@@ -320,7 +234,9 @@ window.interop = {
 };
 
 window.addEventListener('resize', function () {
-	window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
+	if (window.interop.dotNet) {
+		window.interop.dotNet.invokeMethodAsync('GetMainArea', true);
+	}
 });
 
 function throwOnGLError(err, funcName, args) {
@@ -336,7 +252,8 @@ function logGLCall(functionName, args) {
 
 const ColourValues = [
   /*[255, 0, 0], */[0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255], /*[0, 0, 0],*/
-	[192, 64, 0], [64, 192, 0], [64, 192, 0], [192, 64, 0], [64, 0, 192], [192, 0, 64], [192, 192, , 64], [64, 192, 192], [192.64, 192], [64, 192, 64], [64, 192, 192], [192, 192, 64],
+	[192, 64, 0], [64, 192, 0], [64, 192, 0], [192, 64, 0], [64, 0, 192], [192, 0, 64], [192, 192, 64], 
+	[64, 192, 192], [192.64, 192], [64, 192, 64], [64, 192, 192], [192, 192, 64],
 	[128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0], [128, 0, 128], [0, 128, 128], [128, 128, 128],
 	[192, 0, 0], [0, 192, 0], [0, 0, 192], [192, 192, 0], [192, 0, 192], [0, 192, 192], [192, 192, 192],
 	[64, 0, 0], [0, 64, 0], [0, 0, 64], [64, 64, 0], [64, 0, 64], [0, 64, 64], [64, 64, 64],
@@ -400,4 +317,3 @@ function createLabelRow(beerBrewed) {
     <td>${beerBrewed.count}</td>
   </tr>`
 }
-

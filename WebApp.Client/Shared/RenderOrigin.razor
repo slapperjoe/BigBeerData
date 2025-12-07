@@ -1,0 +1,9 @@
+@* Indicates where this component is executing (server vs browser). *@
+@if (OperatingSystem.IsBrowser())
+{
+    <p>This component is currently running in the browser (WebAssembly).</p>
+}
+else
+{
+    <p>This component is currently running on the server.</p>
+}

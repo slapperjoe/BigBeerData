@@ -16,7 +16,7 @@ using Microsoft.Azure.NotificationHubs;
 using System.Xml;
 using SixLabors.ImageSharp.Formats.Png;
 using Image = SixLabors.ImageSharp.Image;
-using Newtonsoft.Json;
+using System.Text.Json;
 using BigBeerData.Shared.DTOs;
 using BigBeerData.Shared;
 
@@ -25,6 +25,8 @@ namespace Api.FileOps
 	public class FileUpload
 	{
 		private readonly ILogger _logger;
+		private const string ContentTypeHeader = "Content-Type";
+		private const string TextPlainUtf8 = "text/plain; charset=utf-8";
 
 		const string MD5Key = "ParsedMD5";
 
@@ -36,19 +38,43 @@ namespace Api.FileOps
 		[Function("FileUpload")]
 		public async Task<HttpResponseData> RunFileUpload([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
 		{
+			if (!req.Headers.TryGetValues(ContentTypeHeader, out var contentTypeValues))
+			{
+				var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+				bad.Headers.Add(ContentTypeHeader, TextPlainUtf8);
+				await bad.WriteStringAsync("Missing Content-Type header");
+				return bad;
+			}
 
-			var boundary = MultipartRequestHelper.GetBoundary(
-				 MediaTypeHeaderValue.Parse(req.Headers.GetValues("Content-Type").FirstOrDefault()), (int)req.Body.Length);
+			var contentType = contentTypeValues.FirstOrDefault();
+			if (string.IsNullOrWhiteSpace(contentType))
+			{
+				var bad = req.CreateResponse(HttpStatusCode.BadRequest);
+				bad.Headers.Add(ContentTypeHeader, TextPlainUtf8);
+				await bad.WriteStringAsync("Invalid Content-Type header");
+				return bad;
+			}
 
+			var boundary = MultipartRequestHelper.GetBoundary(MediaTypeHeaderValue.Parse(contentType), (int)req.Body.Length);
 			var reader = new MultipartReader(boundary, req.Body);
-
 			var data = await reader.ReadNextSectionAsync();
 
 			while (data != null)
 			{
 				var file = data.AsFileSection();
+				if (file == null || string.IsNullOrWhiteSpace(file.FileName))
+				{
+					data = await reader.ReadNextSectionAsync();
+					continue;
+				}
+				if (file.FileStream == null)
+				{
+					data = await reader.ReadNextSectionAsync();
+					continue;
+				}
 
-				var pngName = file.FileName.Substring(0, file.FileName.IndexOf('.')) + ".png";
+				var baseName = Path.GetFileNameWithoutExtension(file.FileName);
+				var pngName = string.IsNullOrWhiteSpace(baseName) ? "upload.png" : baseName + ".png";
 				using (MemoryStream ms = new())
 				{
 					string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
@@ -63,25 +89,25 @@ namespace Api.FileOps
 
 						await file.FileStream.CopyToAsync(ms);
 						ms.Position = 0;
-						MemoryStream ms2 = new();
+						await using MemoryStream ms2 = new();
 						using (Image img = Image.Load(ms))
 						{
 							img.Save(ms2, new PngEncoder());
 						}
 
 						ms2.Position = 0;
-						var resp = await cloudBlockBlob.UploadAsync(ms2);
+						await cloudBlockBlob.UploadAsync(ms2);
 
 						await this.GenerateNotification(ms2, cloudBlockBlob, pngName);
 
-						var props = await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = "image/png" });
+						await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = "image/png" });
 					}
 					catch (Exception ex)
 					{
-						_logger.LogError(ex.Message);
+						_logger.LogError(ex, ex.Message);
 						var errorresponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-						errorresponse.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-						errorresponse.WriteString(ex.Message);
+						errorresponse.Headers.Add(ContentTypeHeader, TextPlainUtf8);
+						await errorresponse.WriteStringAsync(ex.Message);
 						return errorresponse;
 					}
 				}
@@ -89,9 +115,9 @@ namespace Api.FileOps
 			}
 
 			var response = req.CreateResponse(HttpStatusCode.OK);
-			response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+			response.Headers.Add(ContentTypeHeader, TextPlainUtf8);
 
-			response.WriteString("Uploaded to Storage Blob");
+			await response.WriteStringAsync("Uploaded to Storage Blob");
 			return response;
 		}
 
@@ -100,7 +126,17 @@ namespace Api.FileOps
 		{
 			var jsonString = await new StreamReader(req.Body).ReadToEndAsync();
 
-			var beerDto = JsonConvert.DeserializeObject<BeerDTO>(jsonString);
+			var beerDto = JsonSerializer.Deserialize<BeerDTO>(jsonString, new JsonSerializerOptions
+			{
+				PropertyNameCaseInsensitive = true
+			});
+			if (beerDto == null)
+			{
+				var badResponse = req.CreateResponse(HttpStatusCode.BadRequest);
+				badResponse.Headers.Add(ContentTypeHeader, TextPlainUtf8);
+				await badResponse.WriteStringAsync("Invalid beer payload");
+				return badResponse;
+			}
 
 			string storageConnectionString = System.Environment.GetEnvironmentVariable("BigBeerStorageAccount") ?? String.Empty;
 			try
@@ -114,28 +150,27 @@ namespace Api.FileOps
 				BlockBlobClient cloudBlockBlob = cloudBlobContainer.GetBlockBlobClient(fileName);
 
 				req.Body.Position = 0;
-				var resp = await cloudBlockBlob.UploadAsync(req.Body);
-				var props = await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = "application/json" });
+				await cloudBlockBlob.UploadAsync(req.Body);
+				await cloudBlockBlob.SetHttpHeadersAsync(new BlobHttpHeaders { ContentType = "application/json" });
 
 				req.Body.Position = 0;
 
 
-				await this.SendNotification(cloudBlockBlob, fileName);
+				await SendNotification(cloudBlockBlob, fileName);
 			}
 			catch (Exception ex)
-			{				
+			{			
 				var errorresponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-				errorresponse.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-				errorresponse.WriteString(ex.Message);
-				errorresponse.WriteString(ex.StackTrace ?? "No stack trace");
-				//_logger.LogError(ex.Message);
+				errorresponse.Headers.Add(ContentTypeHeader, TextPlainUtf8);
+				await errorresponse.WriteStringAsync(ex.Message);
+				await errorresponse.WriteStringAsync(ex.StackTrace ?? "No stack trace");
 				return errorresponse;
 			}
 
 			var response = req.CreateResponse(HttpStatusCode.OK);
-			response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+			response.Headers.Add(ContentTypeHeader, TextPlainUtf8);
 
-			response.WriteString("Uploaded to Storage Blob");
+			await response.WriteStringAsync("Uploaded to Storage Blob");
 			return response;
 		}
 
@@ -143,7 +178,6 @@ namespace Api.FileOps
 		{
 			ms.Position = 0;
 			byte[] md5 = MD5.HashData(ms.ToArray());
-			//string sMD5 = Encoding.UTF8.GetString(md5);
 
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < md5.Length; i++)
@@ -155,11 +189,11 @@ namespace Api.FileOps
 			try
 			{
 				var metadata = new Dictionary<string, string>
-										{
-												{ MD5Key, sMD5 ?? String.Empty }
-										};
+									{
+										{ MD5Key, sMD5 ?? String.Empty }
+									};
 				await blob.SetMetadataAsync(metadata);
-				var outcome = await SendNotification(blob, name);
+				await SendNotification(blob, name);
 			}
 			catch (Exception e)
 			{
@@ -168,7 +202,7 @@ namespace Api.FileOps
 
 		}
 
-		protected async Task<NotificationOutcome> SendNotification(BlockBlobClient blob, string name) {
+		protected static async Task<NotificationOutcome> SendNotification(BlockBlobClient blob, string name) {
 			NotificationHubClient clientHub = NotificationHubClient
 							.CreateClientFromConnectionString("Endpoint=sb://BigBeerHub.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=05Q8T0gXQ2QxcP25woaXMtbEqAQP8NOGolQO0+FMUlU=", "TappAppUpdates");
 
@@ -177,8 +211,11 @@ namespace Api.FileOps
 
 			string tap = name.Substring(0, name.IndexOf('.'));
 
-
-			(beerToast.SelectSingleNode("toast/@tap-number") as XmlAttribute).Value = tap;
+			var tapAttr = beerToast.SelectSingleNode("toast/@tap-number") as XmlAttribute;
+			if (tapAttr != null)
+			{
+				tapAttr.Value = tap;
+			}
 			XmlNode? textNode = beerToast.SelectSingleNode("/toast/visual/binding/text");
 			if (textNode != null)
 			{

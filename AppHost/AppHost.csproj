@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="8.0.0" />
+    <PackageReference Include="KubernetesClient" Version="18.0.13" />
     <ProjectReference Include="..\Api\Api.csproj" />
     <ProjectReference Include="..\WebApp\WebApp.csproj" />
   </ItemGroup>

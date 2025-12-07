@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch WebApp (DLL)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/WebApp/bin/Debug/net10.0/WebApp.dll",
+      "cwd": "${workspaceFolder}/WebApp",
+      "preLaunchTask": "Build Everything",
+      "env": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "ApiBaseUrl": "http://localhost:7071/",
+        "ASPNETCORE_URLS": "http://localhost:5000"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Now listening on: (https?://.*)"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "Launch WebApp (dotnet run)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "WebApp/WebApp.csproj"
+      ],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build Everything",
+      "env": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "ApiBaseUrl": "http://localhost:7071/"
+      },
+      "dotnetRunMessages": true,
+      "justMyCode": true
+    },
+    {
+      "name": "Attach to Functions (isolated)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:azureFunctions.pickProcess}",
+      "justMyCode": true
+    }
+  ]
+}

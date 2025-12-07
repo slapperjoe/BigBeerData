@@ -3,42 +3,35 @@
 @inject Services.BrowserService Service
 @inject NavigationManager NavigationManager
 
-<MudNavMenu Class="bubbles" Style="padding-top: 32px;">
+<nav class="nav-menu">
 	@if (parent.locations == null)
 	{
-		<span>Loading menu..</span>
+		<div class="nav-loading">Loading…</div>
 	}
 	else
 	{
-		foreach (var location in parent.locations)
-		{
-			<MudNavLink Icon="@selected(location.ID)" Style="@bgSelected(location.ID)"
-				OnClick="async () =>
+		<ul>
+			@foreach (var location in parent.locations)
+			{
+				<li>
+					<button class="nav-item @(parent.selected == location.ID ? "is-active" : string.Empty)"
+						@onclick="async () =>
 						{
 							parent.loaded = false;
 							parent.selected = location.ID;
 							await parent.UpdateLocation(location.ID);
 							parent.loaded = true;
 						}">
-				@location.Name
-			</MudNavLink>
-		}
-		
+						<span class="nav-label">@location.Name</span>
+					</button>
+				</li>
+			}
+		</ul>
 	}
-</MudNavMenu>
+</nav>
 
 @code {
 
 	[Parameter]
 	public MainLayout parent { get; set; } = default!;
-
-	private string? selected(int currentId)
-	{
-		return (currentId == parent.selected ? Icons.Material.Filled.LocalDrink : Icons.Material.Outlined.LocalDrink);
-	}
-
-	private string? bgSelected(int currentId)
-	{
-		return "font-size: 120%;"+ (currentId == parent.selected ? "background-color: rgba(0,0,0,0.15);" : "");
-	}
 }

@@ -41,6 +41,33 @@
       "problemMatcher": [
         "$msCompile"
       ]
+    },
+    {
+      "label": "Build VisualisationInterop (webpack)",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/VisualisationInterop"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run WebApp",
+      "type": "shell",
+      "command": "dotnet run --project WebApp",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": []
     }
   ]
 }

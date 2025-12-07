@@ -1,7 +1,6 @@
-@page "/"
-@layout BigBeerData.WebApp.Components.Layout.MainLayout
-@rendermode InteractiveAuto
-<PageTitle>BigBeerData</PageTitle>
-
-<h1>BigBeerData</h1>
-<p>Welcome to the Blazor Interactive Auto experience. This will render server-side when connected and fall back to WASM when needed.</p>
+﻿<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(WebApp.Client._Imports).Assembly }" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
