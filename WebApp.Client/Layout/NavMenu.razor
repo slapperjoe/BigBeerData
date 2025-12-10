@@ -1,0 +1,38 @@
+﻿@using System.Net.Http
+@using WebApp.Client.Services
+@inject HttpClient Http
+@inject BrowserService Service
+@inject NavigationManager NavigationManager
+
+<nav class="nav-menu">
+	@if (parent.locations == null)
+	{
+		<div class="nav-loading">Loading…</div>
+	}
+	else
+	{
+		<ul>
+			@foreach (var location in parent.locations)
+			{
+				<li>
+					<button class="nav-item @(parent.selected == location.ID ? "is-active" : string.Empty)"
+						@onclick="async () =>
+						{
+							parent.loaded = false;
+							parent.selected = location.ID;
+							await parent.UpdateLocation(location.ID);
+							parent.loaded = true;
+						}">
+						<span class="nav-label">@location.Name</span>
+					</button>
+				</li>
+			}
+		</ul>
+	}
+</nav>
+
+@code {
+
+	[Parameter]
+	public MainLayout parent { get; set; } = default!;
+}

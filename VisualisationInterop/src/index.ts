@@ -31,7 +31,7 @@ window.interop = {
 		globalThis.interop.state._previousState = { ...globalThis.interop.state };
 		globalThis.interop.state = { ...globalThis.interop.state, ...stateObj, _revision: (globalThis.interop.state._revision + 1) };
 		if (globalThis.interop.dotNet) {
-			globalThis.interop.dotNet.invokeMethodAsync('SetState', globalThis.interop.state);
+			//globalThis.interop.dotNet.invokeMethodAsync('SetState', globalThis.interop.state);
 		}
 		return globalThis.interop.state;
 	},
@@ -72,6 +72,8 @@ window.interop = {
 		return true;
 	},
 	SetMapState: (...styles) => {
+		const locations = styles[0] as any[];
+		console.log(`[BBD] SetMapState called with ${locations?.length || 0} locations`);
 		//@ts-ignore
 		window.interop.setState({ map: styles, layers: [] });
 	},
@@ -84,6 +86,7 @@ window.interop = {
 			bearing: 0,
 			pitch: 80
 		};
+		console.log(`[BBD] InitDeckGL: long=${longitude}, lat=${latitude}, zoom=${zoom}`);
 
 		(mapboxgl as any).accessToken = 'pk.eyJ1IjoibWFyaWMxIiwiYSI6Ii0xdWs1TlUifQ.U56tiQG_kj88zNf_1PxHQw';// process.env.MapboxAccessToken; // eslint-disable-line
 
@@ -173,6 +176,7 @@ window.interop = {
 		window.interop.setState({ colourMap: colourMap, currentZoom: zoom, mapLoaded: true });
 		window.interop.deck = deck;
 		window.interop.mapDiv = map;
+		console.log("[BBD] InitDeckGL: Deck and Map initialized");
 		return true;
 	},
 	AddColumnChartPoint: (zoom) => {
@@ -181,7 +185,9 @@ window.interop = {
 		}
 
 		const scale = 20;
+		console.log(`[BBD] AddColumnChartPoint: Building column data for ${globalThis.interop.state.map.length} locations`);
 		const columnData = oneChart.buildColumnData(globalThis.interop.state.map, globalThis.interop.state.colourMap, scale);
+		console.log(`[BBD] AddColumnChartPoint: Generated ${columnData.length} columns`);
 		const columnLayer = oneChart.createColumnLayer(columnData, scale, (selected) => {
 			if (!globalThis.interop.dotNet) {
 				return;
@@ -202,8 +208,8 @@ window.interop = {
 
 					const pieChartLayers = oneChart.createPieChartLayers(result, globalThis.deckGLContext as WebGLRenderingContext, oneChart.ColourValues);
 					const pieLabelLayer = generateNewTextLayer(zoom, globalThis.interop.state.brewerMap, 'pie-text-layer', 128);
-					const layers = [globalThis.interop.deck.props.layers[0], globalThis.interop.deck.props.layers[1], 
-										arcLayer, ...pieChartLayers, pieLabelLayer];
+					const layers = [globalThis.interop.deck.props.layers[0], globalThis.interop.deck.props.layers[1],
+						arcLayer, ...pieChartLayers, pieLabelLayer];
 					globalThis.interop.setState({ viewingVenue: false });
 					globalThis.interop.deck.setProps({
 						layers: layers
@@ -252,7 +258,7 @@ function logGLCall(functionName, args) {
 
 const ColourValues = [
   /*[255, 0, 0], */[0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255], /*[0, 0, 0],*/
-	[192, 64, 0], [64, 192, 0], [64, 192, 0], [192, 64, 0], [64, 0, 192], [192, 0, 64], [192, 192, 64], 
+	[192, 64, 0], [64, 192, 0], [64, 192, 0], [192, 64, 0], [64, 0, 192], [192, 0, 64], [192, 192, 64],
 	[64, 192, 192], [192.64, 192], [64, 192, 64], [64, 192, 192], [192, 192, 64],
 	[128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0], [128, 0, 128], [0, 128, 128], [128, 128, 128],
 	[192, 0, 0], [0, 192, 0], [0, 0, 192], [192, 192, 0], [192, 0, 192], [0, 192, 192], [192, 192, 192],

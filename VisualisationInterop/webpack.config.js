@@ -18,7 +18,7 @@ module.exports = {
     },
     output: {
         filename: 'index.bundle.js',
-        path: path.resolve(__dirname, '../Client/wwwroot/js'),
+        path: path.resolve(__dirname, '../WebApp/wwwroot/js'),
         scriptType: 'text/javascript'
     },
 };

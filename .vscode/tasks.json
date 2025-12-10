@@ -2,18 +2,41 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Start Database",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Run API Functions Host",
       "type": "shell",
       "command": "func start",
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared"
       },
       "options": {
         "cwd": "${workspaceFolder}/Api"
       },
       "isBackground": true,
-      "problemMatcher": []
+      "dependsOn": [
+        "Start Database",
+        "Build Everything"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "Worker process started and initialized"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting worker process",
+          "endsPattern": "Worker process started and initialized"
+        }
+      }
     },
     {
       "label": "Run UI Dev Server",
@@ -58,7 +81,7 @@
     {
       "label": "Run WebApp",
       "type": "shell",
-      "command": "dotnet run --project WebApp",
+      "command": "dotnet watch run --project WebApp",
       "options": {
         "cwd": "${workspaceFolder}"
       },

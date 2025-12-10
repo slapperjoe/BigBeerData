@@ -1,5 +1,6 @@
 using WebApp.Components;
 using WebApp.Client;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,11 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddMudServices();
+builder.Services.AddScoped<WebApp.Client.Services.BrowserService>();
+builder.Services.AddHttpClient("Api", client => client.BaseAddress = new Uri("http://localhost:7071"));
+builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Api"));
 
 var app = builder.Build();
 

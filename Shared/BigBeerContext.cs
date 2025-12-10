@@ -21,7 +21,7 @@ namespace BigBeerData.Shared
 		{
 			var optionsBuilder = new DbContextOptionsBuilder<BigBeerContext>();
 			optionsBuilder.UseSqlServer(
-											 "Data Source=(localdb)\\ProjectsV13;Initial Catalog=BigBeerData.Core;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"
+											 "Server=localhost,1433;Database=BigBeerData.Core;User Id=sa;Password=BigBeer!2024;TrustServerCertificate=True;"
 									 );
 
 			return new BigBeerContext(optionsBuilder.Options);

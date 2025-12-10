@@ -2,12 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch WebApp (DLL)",
+      "name": "Launch WebApp",
       "type": "coreclr",
       "request": "launch",
       "program": "${workspaceFolder}/WebApp/bin/Debug/net10.0/WebApp.dll",
       "cwd": "${workspaceFolder}/WebApp",
-      "preLaunchTask": "Build Everything",
+      "preLaunchTask": "Run API Functions Host",
       "env": {
         "DOTNET_ENVIRONMENT": "Development",
         "ApiBaseUrl": "http://localhost:7071/",

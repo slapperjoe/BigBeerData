@@ -1,0 +1,100 @@
+﻿@inherits LayoutComponentBase
+
+@inject HttpClient Http
+@inject Services.BrowserService Service
+
+@using System.Net.Http
+@using BigBeerData.Shared
+@using WebApp.Client.Layout
+
+<div class="app-shell">
+	<header class="app-header">
+		<div class="header-left">
+			@if (mainSite)
+			{
+				<button class="icon-button" title="Refresh data" @onclick="UpdateDatabase">
+					<span class="icon-rotate @ReloadAnimation">⟳</span>
+				</button>
+			}
+			<img src="/img/onthebeers.png" alt="On The Beers/Big Beer Data" class="logo"
+				style="filter: invert(1) grayscale(1) brightness(1.5);" />
+		</div>
+		<div class="header-right">
+			@if (mainSite)
+			{
+				<span class="status-pill">Map view</span>
+			}
+		</div>
+	</header>
+
+	<div class="app-body">
+		@if (mainSite)
+		{
+			<aside class="app-sidebar">
+				<div class="sidebar-inner">
+					<NavMenu parent="@this" />
+				</div>
+			</aside>
+		}
+		<main class="app-main">
+			<CascadingValue name="parent" Value="this">
+				@if (mainSite)
+				{
+					<WebApp.Client.Pages.Home @ref="indexRef" />
+				}
+				else
+				{
+					@Body
+				}
+			</CascadingValue>
+		</main>
+	</div>
+</div>
+
+@code {
+
+	[CascadingParameter]
+	RouteData RouteData { get; set; } = default!;
+
+	bool mainSite => this.RouteData?.PageType?.Name != "Tochka";
+
+	public bool loaded = false;
+	public WebApp.Client.Pages.Home indexRef = default!;
+	public List<AreaLocation> locations = default!;
+	public int selected = 1;
+	public bool updating = false;
+
+	public string ReloadAnimation => updating ? "is-spinning" : string.Empty;
+
+	public async Task UpdateLocation(int id)
+	{
+		if (indexRef != null)
+		{
+			await Task.Run(async () => await indexRef.LocationUpdated(id));
+		}
+	}
+
+	public void setLoaded(bool loadedValue)
+	{
+		loaded = loadedValue;
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (this.mainSite)
+		{
+			locations = await Http.GetFromJsonAsync<List<AreaLocation>>("api/location/current") ?? new List<AreaLocation>();
+		}
+		loaded = true;
+	}
+
+	protected async Task UpdateDatabase()
+	{
+		if (!updating && this.mainSite)
+		{
+			updating = true;
+			await Http.GetAsync("api/UpdateSync");
+			updating = false;
+		}
+	}
+}
