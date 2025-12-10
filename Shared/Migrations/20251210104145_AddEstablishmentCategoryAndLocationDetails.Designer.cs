@@ -4,6 +4,7 @@ using BigBeerData.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BigBeerData.Shared.Migrations
 {
     [DbContext(typeof(BigBeerContext))]
-    partial class BigBeerContextModelSnapshot : ModelSnapshot
+    [Migration("20251210104145_AddEstablishmentCategoryAndLocationDetails")]
+    partial class AddEstablishmentCategoryAndLocationDetails
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

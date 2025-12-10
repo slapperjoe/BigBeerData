@@ -55,47 +55,49 @@ namespace Api
             return response;
         }
 
-        [Function("UpdateSync")]
-        public async Task<HttpResponseData> RunSync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequestData req)
+        [Function("UpdateTimer")]
+        public async Task RunTimer([TimerTrigger("0 0 0 * * 0")] TimerInfo myTimer, FunctionContext context)
         {
-            using var activity = ActivitySource.StartActivity("Update.RunSync");
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
+            _logger.LogInformation($"Weekly Update Timer executed at: {DateTime.Now}");
+            if (myTimer.IsPastDue) _logger.LogInformation("Timer is running late!");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-            await RunUpdate(response.Body, req.FunctionContext.CancellationToken);
-            return response;
+            await RunUpdateCore(async (msg) => _logger.LogInformation(msg), context.CancellationToken);
         }
 
-
-
         public async Task RunUpdate(Stream stream, CancellationToken cancellationToken)
+        {
+            using var writeStream = new StreamWriter(stream, leaveOpen: true) { AutoFlush = true };
+            await writeStream.WriteLineAsync("data: Starting Data Scrape.");
+            await writeStream.FlushAsync();
+
+            await RunUpdateCore(async (msg) =>
+            {
+                await writeStream.WriteLineAsync($"data: {msg}");
+                await writeStream.FlushAsync();
+            }, cancellationToken);
+
+            await writeStream.WriteLineAsync("data: Update complete.");
+            await writeStream.FlushAsync();
+        }
+
+        private async Task RunUpdateCore(Func<string, Task> logAction, CancellationToken cancellationToken)
         {
             var optionsBuilder = new DbContextOptionsBuilder<BigBeerContext>();
             optionsBuilder.UseSqlServer(_connectionString);
 
             using var dbContext = new BigBeerContext(optionsBuilder.Options);
-            using var writeStream = new StreamWriter(stream, leaveOpen: true) { AutoFlush = true };
             var client = _httpClientFactory.CreateClient("BeerBot");
-
-            await writeStream.WriteLineAsync("data: Starting Data Scrape.");
-            await writeStream.FlushAsync();
 
             List<Establishment> establishments = dbContext.Establishments.Include(i => i.Checkins).ToList();
 
             foreach (var establishment in establishments)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await HandleEstablishment(establishment, dbContext, client, writeStream, cancellationToken);
+                await HandleEstablishment(establishment, dbContext, client, logAction, cancellationToken);
             }
-
-            await writeStream.WriteLineAsync("data: Update complete.");
-            await writeStream.FlushAsync();
         }
 
-        private async Task HandleEstablishment(Establishment establishment, BigBeerContext dbContext, HttpClient client, StreamWriter writeStream, CancellationToken cancellationToken)
+        private async Task HandleEstablishment(Establishment establishment, BigBeerContext dbContext, HttpClient client, Func<string, Task> logAction, CancellationToken cancellationToken)
         {
             var counter = 0;
             var alreadyAddedToDatabase = false;
@@ -109,49 +111,46 @@ namespace Api
                 dbContext.Establishments.Update(establishment);
                 await dbContext.SaveChangesAsync(cancellationToken);
 
-                await writeStream.WriteLineAsync($"data: Looking for new beers in {establishment.EstablishmentName}");
-                await writeStream.FlushAsync();
-                checkins = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
+                await logAction($"Looking for new beers in {establishment.EstablishmentName}");
+                checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
             }
             else
             {
-                await writeStream.WriteLineAsync($"data: Already searched today for beers in {establishment.EstablishmentName}");
+                await logAction($"Already searched today for beers in {establishment.EstablishmentName}");
             }
 
             counter++;
 
             if (checkins != null)
             {
-                alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, writeStream, cancellationToken);
+                alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, logAction, cancellationToken);
                 while (!alreadyAddedToDatabase && counter < MAX_REQUESTS)
                 {
-                    await writeStream.WriteLineAsync($"data: Looking for less new beers in {establishment.EstablishmentName}");
-                    await writeStream.FlushAsync();
+                    await logAction($"Looking for less new beers in {establishment.EstablishmentName}");
 
-                    checkins = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
+                    checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
                     counter++;
-                    alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, writeStream, cancellationToken);
+                    alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, logAction, cancellationToken);
                 }
             }
 
             if (counter < MAX_REQUESTS && !newGet && !establishment.MaxedCheckinHistory)
             {
-                checkins = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
+                checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
                 counter++;
-                alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, writeStream, cancellationToken);
+                alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, logAction, cancellationToken);
 
                 while (checkins.Count > 0 && !alreadyAddedToDatabase && counter < MAX_REQUESTS)
                 {
-                    await writeStream.WriteLineAsync("data: Looking for old beers in {establishment.EstablishmentName}");
-                    await writeStream.FlushAsync();
-                    checkins = await CheckinsGet(establishment.EstablishmentId, client, writeStream);
+                    await logAction($"Looking for old beers in {establishment.EstablishmentName}");
+                    checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
                     counter++;
-                    alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, writeStream, cancellationToken);
+                    alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, logAction, cancellationToken);
                 }
             }
         }
 
-        private static async Task<bool> ProcessCheckins(List<Checkin> checkins, bool alreadyAdded, BigBeerContext db, StreamWriter sw, CancellationToken cancellationToken)
+        private static async Task<bool> ProcessCheckins(List<Checkin> checkins, bool alreadyAdded, BigBeerContext db, Func<string, Task> logAction, CancellationToken cancellationToken)
         {
             foreach (var checkin in checkins)
             {
@@ -159,7 +158,7 @@ namespace Api
 
                 if (checkin.Beer == null)
                 {
-                    await sw.WriteLineAsync("Skipped checkin missing beer payload");
+                    await logAction("Skipped checkin missing beer payload");
                     continue;
                 }
 
@@ -174,14 +173,12 @@ namespace Api
                 }
                 else
                 {
-                    // This logic seems wrong in original code (replacing Beer with itself?), leaving it but fixing tracking
                     var prevBeer = db.Beers.Local.FirstOrDefault(b => b.Bid == checkin.Beer.Bid)
                                    ?? db.Beers.FirstOrDefault(b => b.Bid == checkin.Beer.Bid);
                     if (prevBeer != null)
                         checkin.Beer = prevBeer;
                 }
 
-                // Also check duplicate Beer
                 var existingBeer = db.Beers.Local.FirstOrDefault(b => b.Bid == checkin.Beer.Bid)
                                    ?? db.Beers.FirstOrDefault(b => b.Bid == checkin.Beer.Bid);
                 if (existingBeer != null)
@@ -199,11 +196,11 @@ namespace Api
                 try
                 {
                     db.Checkins.Add(checkin);
-                    await sw.WriteLineAsync(" + Added " + checkin?.Beer?.BeerName);
+                    await logAction(" + Added " + checkin?.Beer?.BeerName);
                 }
                 catch (Exception ex)
                 {
-                    await sw.WriteLineAsync($"Failed to add checkin: {checkin.CheckinId},{ex.Message}");
+                    await logAction($"Failed to add checkin: {checkin.CheckinId},{ex.Message}");
                 }
             }
 
@@ -211,7 +208,7 @@ namespace Api
             return alreadyAdded;
         }
 
-        public async Task<List<Checkin>> CheckinsGet(int id, HttpClient client, StreamWriter sw, int? max_id = null)
+        public async Task<List<Checkin>> CheckinsGet(int id, HttpClient client, Func<string, Task> logAction, int? max_id = null)
         {
             var requestString = "venue/checkins/" + id + "?client_id=" + client_id +
                             "&client_secret=" + client_secret;
@@ -231,7 +228,7 @@ namespace Api
             dynamic? payload = JsonSerializer.Deserialize<dynamic>(venueData, serializerOptions);
             if (payload?.response == null)
             {
-                await sw.WriteLineAsync("Venue has no items");
+                await logAction("Venue has no items");
                 return new List<Checkin>();
             }
 
