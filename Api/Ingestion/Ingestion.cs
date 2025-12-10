@@ -34,11 +34,11 @@ namespace BigBeerData.Api.Ingestion
             _logger.LogInformation("HTTP Ingestion Triggered.");
 
             // Parse query parameter or body
-            string location = req.Query["location"];
+            string? location = req.Query["location"];
             if (string.IsNullOrEmpty(location))
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                dynamic data = JsonConvert.DeserializeObject(requestBody);
+                dynamic? data = JsonConvert.DeserializeObject(requestBody);
                 location = data?.location;
             }
 
@@ -60,8 +60,8 @@ namespace BigBeerData.Api.Ingestion
         {
             _logger.LogInformation($"Starting Ingestion for: {locationQuery}");
 
-            string clientId = Environment.GetEnvironmentVariable("UntappdClientId");
-            string clientSecret = Environment.GetEnvironmentVariable("UntappdClientSecret");
+            string? clientId = Environment.GetEnvironmentVariable("UntappdClientId");
+            string? clientSecret = Environment.GetEnvironmentVariable("UntappdClientSecret");
             string baseUrl = "https://api.untappd.com/v4/";
 
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
@@ -113,7 +113,7 @@ namespace BigBeerData.Api.Ingestion
                 }
 
                 string json = await response.Content.ReadAsStringAsync();
-                UntappdSearchVenueRoot root;
+                UntappdSearchVenueRoot? root;
                 try
                 {
                     root = JsonConvert.DeserializeObject<UntappdSearchVenueRoot>(json);
@@ -143,7 +143,7 @@ namespace BigBeerData.Api.Ingestion
                     if (v.Categories?.Items != null)
                     {
                         var excludedCategories = new HashSet<string> { "Plane", "Airport", "Office", "Home (private)", "Travel & Transport", "Travel and Transportation" };
-                        if (v.Categories.Items.Any(c => excludedCategories.Contains(c.CategoryName)))
+                        if (v.Categories.Items.Any(c => c.CategoryName != null && excludedCategories.Contains(c.CategoryName)))
                         {
                             continue;
                         }
@@ -214,34 +214,34 @@ namespace BigBeerData.Api.Ingestion
     }
 
     // --- Minimal Models ---
-    public class UntappdSearchVenueRoot { public UntappdSearchVenueResponse Response { get; set; } }
-    public class UntappdSearchVenueResponse { public UntappdSearchVenueList Venues { get; set; } }
-    public class UntappdSearchVenueList { public List<UntappdSearchVenueItem> Items { get; set; } }
-    public class UntappdSearchVenueItem { public UntappdVenue Venue { get; set; } }
+    public class UntappdSearchVenueRoot { public UntappdSearchVenueResponse? Response { get; set; } }
+    public class UntappdSearchVenueResponse { public UntappdSearchVenueList? Venues { get; set; } }
+    public class UntappdSearchVenueList { public List<UntappdSearchVenueItem>? Items { get; set; } }
+    public class UntappdSearchVenueItem { public UntappdVenue? Venue { get; set; } }
     public class UntappdVenue
     {
         [JsonProperty("venue_id")] public int Venue_id { get; set; }
-        [JsonProperty("location")] public string Location { get; set; }
-        [JsonProperty("categories")] public UntappdVenueCategories Categories { get; set; }
+        [JsonProperty("location")] public string? Location { get; set; }
+        [JsonProperty("categories")] public UntappdVenueCategories? Categories { get; set; }
     }
-    public class UntappdVenueCategories { [JsonProperty("items")] public List<UntappdVenueCategoryItem> Items { get; set; } }
-    public class UntappdVenueCategoryItem { [JsonProperty("category_name")] public string CategoryName { get; set; } }
+    public class UntappdVenueCategories { [JsonProperty("items")] public List<UntappdVenueCategoryItem>? Items { get; set; } }
+    public class UntappdVenueCategoryItem { [JsonProperty("category_name")] public string? CategoryName { get; set; } }
 
-    public class UntappdVenueInfoRoot { [JsonProperty("response")] public UntappdVenueInfoResponse Response { get; set; } }
-    public class UntappdVenueInfoResponse { [JsonProperty("venue")] public UntappdVenueDetail Venue { get; set; } }
+    public class UntappdVenueInfoRoot { [JsonProperty("response")] public UntappdVenueInfoResponse? Response { get; set; } }
+    public class UntappdVenueInfoResponse { [JsonProperty("venue")] public UntappdVenueDetail? Venue { get; set; } }
     public class UntappdVenueDetail
     {
         [JsonProperty("venue_id")] public int VenueId { get; set; }
-        [JsonProperty("venue_name")] public string VenueName { get; set; }
+        [JsonProperty("venue_name")] public string? VenueName { get; set; }
         [JsonProperty("is_closed")] public bool IsClosed { get; set; }
-        [JsonProperty("categories")] public UntappdVenueCategories Categories { get; set; }
-        [JsonProperty("location")] public UntappdVenueDetailLocation Location { get; set; }
+        [JsonProperty("categories")] public UntappdVenueCategories? Categories { get; set; }
+        [JsonProperty("location")] public UntappdVenueDetailLocation? Location { get; set; }
     }
     public class UntappdVenueDetailLocation
     {
         [JsonProperty("lat")] public double Lat { get; set; }
         [JsonProperty("lng")] public double Lng { get; set; }
-        [JsonProperty("venue_state")] public string VenueState { get; set; }
-        [JsonProperty("venue_country")] public string VenueCountry { get; set; }
+        [JsonProperty("venue_state")] public string? VenueState { get; set; }
+        [JsonProperty("venue_country")] public string? VenueCountry { get; set; }
     }
 }
