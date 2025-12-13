@@ -105,6 +105,25 @@
       },
       "isBackground": true,
       "problemMatcher": []
+    },
+    {
+      "label": "Backup Database (bacpac)",
+      "type": "shell",
+      "command": "docker run --rm -v ${workspaceFolder}:/app -w /root --network host mcr.microsoft.com/dotnet/sdk:8.0 /bin/bash -c \"dotnet tool install -g Microsoft.SqlPackage && /root/.dotnet/tools/sqlpackage /Action:Export /SourceConnectionString:'Data Source=localhost,1433;Initial Catalog=BigBeerData.Core;User Id=sa;Password=BigBeerStrong2024;TrustServerCertificate=True' /TargetFile:'/app/BigBeerData.backup.bacpac'\"",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Restore Database (bacpac)",
+      "type": "shell",
+      "command": "docker exec sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P BigBeerStrong2024 -Q \"ALTER DATABASE [BigBeerData.Core] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE IF EXISTS [BigBeerData.Core]\" && docker run --rm -v ${workspaceFolder}:/app -w /root --network host mcr.microsoft.com/dotnet/sdk:8.0 /bin/bash -c \"dotnet tool install -g Microsoft.SqlPackage && /root/.dotnet/tools/sqlpackage /Action:Import /TargetConnectionString:'Data Source=localhost,1433;Initial Catalog=BigBeerData.Core;User Id=sa;Password=BigBeerStrong2024;TrustServerCertificate=True' /SourceFile:'/app/BigBeerData.backup.bacpac'\"",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

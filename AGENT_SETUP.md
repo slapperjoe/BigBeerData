@@ -72,6 +72,17 @@ dotnet run --project BigBeerData.AppHost/BigBeerData.AppHost.csproj
 
 The Dashboard will launch, providing links to the API and WebApp endpoints.
 
+### 4. Database Management (Backup / Restore)
+
+Convenience tasks are available in VS Code to manage database backups (using Docker to bypass local tool version issues):
+
+*   **Backup Database (bacpac)**: Exports `BigBeerData.Core` to `BigBeerData.backup.bacpac` in the root.
+*   **Restore Database (bacpac)**: **Drops and Re-creates** `BigBeerData.Core` from `BigBeerData.backup.bacpac`.
+    > [!WARNING]
+    > **Data Loss**: The Restore task will delete the existing database to ensure a clean import. Ensure you have a backup if you want to keep current data.
+
+To run these: `Ctrl+Shift+P` -> "Tasks: Run Task" -> Select the task.
+
 ## Troubleshooting & Common "Headaches"
 
 The following issues were encountered during development and may recur if the setup deviates from the standard configuration.
