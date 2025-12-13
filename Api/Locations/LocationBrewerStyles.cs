@@ -25,7 +25,7 @@ namespace App2.Locations
         [Function("LocationBrewerStyles")]
         public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Location/{id}/{style}/brewers")] HttpRequestData req, long id, string style)
         {
-            
+
 
             style = HttpUtility.UrlDecode(style);
             _logger.LogDebug("Location Brewer Styles called id: {id}, style: {style}", id, style);
@@ -44,7 +44,12 @@ namespace App2.Locations
                 Type = b.Type,
                 URL = b.URL,
                 Location = new GeoPoint { X = b.Long, Y = b.Lat },
-                BeersBrewed = b.Beers.GroupBy(d => d.BaseStyle).Select(d => new StyleResult { Count = d.Count(), Name = d.Key })
+                BeersBrewed = b.Beers.GroupBy(d => d.BaseStyle).Select(d => new StyleResult
+                {
+                    Count = d.Count(),
+                    Name = d.Key,
+                    Beers = d.Select(x => x.BeerName).Distinct().ToList()
+                })
             }).ToList();
 
 

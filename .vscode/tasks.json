@@ -13,7 +13,7 @@
     {
       "label": "Run API Functions Host",
       "type": "shell",
-      "command": "func start",
+      "command": "lsof -ti:7071 | xargs -r kill -9; func start",
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -81,7 +81,7 @@
     {
       "label": "Run WebApp",
       "type": "shell",
-      "command": "dotnet watch run --project WebApp",
+      "command": "lsof -ti:5198 | xargs -r kill -9; dotnet watch run --project WebApp",
       "options": {
         "cwd": "${workspaceFolder}"
       },

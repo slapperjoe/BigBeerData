@@ -16,4 +16,4 @@ cd Api
 `until curl -s -f http://localhost:7071/api/location/current > /dev/null; do echo "Waiting for API to be ready..."; sleep 2; done`
 
 4. Start the WebApp (in same terminal as 3.)
-`dotnet run --project WebApp --urls http://localhost:5200`
+`lsof -ti:5200 | xargs -r kill -9; dotnet run --project WebApp --urls http://localhost:5200`

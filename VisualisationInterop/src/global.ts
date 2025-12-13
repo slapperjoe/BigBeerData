@@ -18,6 +18,10 @@ declare global {
          RefreshImage: (imageElementId, url) => Promise<void>;
          ShowLoadBox: (element) => void;
          HideLoadBox: (element) => void;
+         togglePieMode: () => void;
+         ShowSunburst: () => void;
+         ShowPopup: (coordinates: [number, number], html: string) => void;
+         popup?: any; // Track active popup
       };
       deckGLContext: any;
    }
@@ -39,5 +43,7 @@ export interface StateObject {
    label: string;
    viewingVenue: boolean;
    uniformData: { colourMap: any };
-   selectedVenue: any;
+   selectedVenue?: any;
+   useSolidPies?: boolean;
+   defaultZoom?: number;
 }

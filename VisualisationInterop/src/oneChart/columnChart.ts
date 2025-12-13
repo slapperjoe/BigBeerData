@@ -1,5 +1,5 @@
-import type { Color } from "@deck.gl/core/typed";
-import { ColumnLayer } from "@deck.gl/layers/typed";
+import type { Color } from "@deck.gl/core";
+import { ColumnLayer } from "@deck.gl/layers";
 
 /**
  * Shape of a colour lookup entry that aligns beer style names to RGBA arrays.
@@ -29,6 +29,7 @@ export interface ColumnDatum {
 	colour?: number[];
 	venue: unknown;
 	venuename: string;
+	totalHeight?: number; // Added to lift arc start point
 }
 
 /**
@@ -36,14 +37,21 @@ export interface ColumnDatum {
  */
 export function buildColumnData(map: StyleMapEntry[], colourMap: ColourEntry[], scale: number): ColumnDatum[] {
 	const columnData = map.map((entry) => {
+		// Calculate total height of the stack for this venue
+		const totalStackHeight = entry.styles.reduce((max, style) => Math.max(max, style.height + style.count), 0);
+
 		return entry.styles.map((style) => {
+			const matchedColor = colourMap.find((c) => c.name === style.name)?.colour;
+			if (!matchedColor) console.warn(`[BBD] No color found for style: '${style.name}'`);
+
 			return {
 				centroid: [entry.location.x, entry.location.y, style.height * scale] as [number, number, number],
 				value: style.count,
 				name: style.name,
-				colour: colourMap.find((c) => c.name === style.name)?.colour,
+				colour: matchedColor,
 				venue: entry.venue,
 				venuename: entry.name,
+				totalHeight: totalStackHeight * scale // Scale the total height
 			};
 		});
 	});

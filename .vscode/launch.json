@@ -14,10 +14,18 @@
         "ASPNETCORE_URLS": "http://localhost:5000"
       },
       "serverReadyAction": {
-        "action": "openExternally",
+        "action": "startDebugging",
+        "name": "Launch Chrome",
         "pattern": "Now listening on: (https?://.*)"
       },
       "justMyCode": true
+    },
+    {
+      "name": "Launch Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5198",
+      "webRoot": "${workspaceFolder}/WebApp"
     },
     {
       "name": "Launch WebApp (dotnet run)",
@@ -36,13 +44,6 @@
         "ApiBaseUrl": "http://localhost:7071/"
       },
       "dotnetRunMessages": true,
-      "justMyCode": true
-    },
-    {
-      "name": "Attach to Functions (isolated)",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": "${command:azureFunctions.pickProcess}",
       "justMyCode": true
     }
   ]

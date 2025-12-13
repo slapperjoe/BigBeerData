@@ -2,7 +2,7 @@
 import { ScatterplotLayer, BitmapLayer, ArcLayer, ColumnLayer, TextLayer } from '@deck.gl/layers/';
 import { default as mapboxgl } from 'mapbox-gl/dist/mapbox-gl';
 import { SimpleMeshLayer } from '@deck.gl/mesh-layers';
-import { Model, Geometry, CubeGeometry, CylinderGeometry } from '@luma.gl/core';
+import { Model, Geometry, CubeGeometry, CylinderGeometry } from '@luma.gl/engine';
 
 import { GL } from '@luma.gl/constants';
 
@@ -18,6 +18,7 @@ export module LayerExtensions {
 		declare context: any;
 		declare setState: (a: any) => {};
 		//declare _getModel: (a: any) => void;
+		//@ts-ignore
 		declare state: {
 			model: any
 		}
@@ -28,15 +29,15 @@ export module LayerExtensions {
 
 
 		initializeState() {
-			const { gl } = this.context;
+			const { device } = this.context;
 			this.setState({
-				model: this._getModel(gl)
+				model: this.getModel(device)
 			});
 			//super.initalizeState();
 		}
 
-		_getModel(gl) {
-			return new Model(gl, Object.assign({}, super.getShaders(), {
+		getModel(device) {
+			return new Model(device, Object.assign({}, super.getShaders(), {
 				id: this.props.id,
 				//geometry: new CylinderGeometry(),
 				isInstanced: true,
@@ -52,7 +53,7 @@ export module LayerExtensions {
 
 		declare props: any;
 		declare setState: (a: any) => {};
-		declare _getModel: (a: any) => void;
+		declare getModel: (a: any) => any;
 		declare state: {
 			model: any
 		}
@@ -78,8 +79,7 @@ export module LayerExtensions {
 					//@ts-ignore
 					size: 1,
 					transition: true,
-					normalized: true,
-					type: GL.INT,
+					type: 'float32',
 					accessor: 'getStartIndex',
 					defaultValue: 0
 				},
@@ -87,23 +87,21 @@ export module LayerExtensions {
 					//@ts-ignore
 					size: 1,
 					transition: true,
-					normalized: true,
-					type: GL.INT,
+					type: 'float32',
 					accessor: 'getEndIndex',
 					defaultValue: 0
 				},
 				instanceBrewerIndex: {
 					size: 1,
 					transition: true,
-					normalized: true,
-					type: GL.INT,
+					type: 'float32',
 					accessor: 'getBrewerIndex',
 					defaultValue: 0
 				},
 				//instanceAngleData: {
 				//	size: 1,
 				//	normalized: true,
-				//	type: GL.FLOAT,
+				//	type: 'float32',
 				//	accessor: 'getAngleData',
 				//	defaultValue: [0, 90, 90, 180, 180, 270, 270, 360]
 				//},
@@ -111,15 +109,14 @@ export module LayerExtensions {
 					size: 1,
 					accessor: 'getAngleNumber',
 					transition: true,
-					normalized: true,
-					type: GL.FLOAT,
+					type: 'float32',
 					defaultValue: 1
 				},
 			})
 		};
 
-		updateState({ props, oldProps, changeFlags }) {
-			super.updateState({ props, oldProps, changeFlags });
+		updateState({ props, oldProps, changeFlags }: any) {
+			super.updateState({ props, oldProps, changeFlags } as any);
 			this.state.model.setUniforms({
 				colourMap: window.interop.state.uniformData.colourMap,
 				outSliceLength: props.outSliceLength,
@@ -149,27 +146,4 @@ export module LayerExtensions {
 	}
 }
 
-declare global {
-	interface Window {
-		interop: {
-			dotNet: any;
-			deck: any;
-			mapDiv: any;
-			state: StateObject;
-			setState: (a: {}) => void;
-			AddColumnChartPoint: (a: number) => void;
-			InitDeckGL: (longitude, latitude, zoom) => boolean;
-			FlyTo: (longitude, latitude, zoom) => void;
-			SetMapState: (a: {}) => void;
-			getDimensions: () => {};
-			getRenderArea: () => {};
-			hookDotNet: (a: any) => void;
-			consoleLog: (a: string) => boolean;
-			RefreshImage: (imageElementId, imageStream) => Promise<void>;
-			ShowLoadBox: (element) => void;
-			HideLoadBox: (element) => void;
-		};
-		deckGLContext: any;
-	}
-}
 

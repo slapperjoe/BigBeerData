@@ -7,198 +7,203 @@
 @using System.Net.Http
 @using System.Threading
 @using System.Web
+@using Microsoft.JSInterop
+@using WebApp.Client.Layout
 @inject HttpClient Http
 @inject Services.BrowserService Service
 
-
-
 @if (parent.loaded)
 {
-		<div class="control-section" style="height: 100%;">
-		<div @ref="mapContainer" id="mapContainer">
-			<div id="map" style="height: 100%"></div>
-			<canvas id="deck-canvas" style="height: 100%"></canvas>
-		</div>
-	</div>
+    <div class="control-section" style="height: 100%;">
+        <div @ref="mapContainer" id="mapContainer">
+            <div id="map" style="height: 100%"></div>
+            <canvas id="deck-canvas" style="height: 100%"></canvas>
+
+            <button class="btn btn-primary" style="position: absolute; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" 
+                    onclick="window.interop.ShowSunburst()">
+                🍺 The Beer Wheel
+            </button>
+        </div>
+    </div>
 }
 else
 {
-		<div class="loadingDiv">
-		<img style="width: 100px; height: 100px;" class="centreLoader" src="/img/beerload.svg" />
-	</div>
+    <div class="loadingDiv">
+        <img style="width: 100px; height: 100px;" class="centreLoader" src="/img/beerload.svg" />
+    </div>
 }
 
 @code {
-	[CascadingParameter(Name = "parent")]
-	public WebApp.Client.Layout.MainLayout parent { get; set; } = default!;
+    [CascadingParameter(Name = "parent")]
+    public MainLayout parent { get; set; } = default!;
 
-	public ElementReference mapContainer;
+    public ElementReference mapContainer;
 
-	public LocationStyle[]? locationStyles;
-	public GeoBounds? bounds;
+    public LocationStyle[]? locationStyles;
+    public GeoBounds? bounds;
 
-	private double cntrLong = 0;
-	private double cntrLat = 0;
-	private double zoom = 12;
-	private int Height = 0;
-	public int MainHeight { get; set; }
-	public int Width { get; set; }
-	public int WSVGPad { get; set; }
-	public int HSVGPad { get; set; }
+    private double cntrLong = 0;
+    private double cntrLat = 0;
+    private double zoom = 12;
+    private int Height = 0;
+    public int MainHeight { get; set; }
+    public int Width { get; set; }
+    public int WSVGPad { get; set; }
+    public int HSVGPad { get; set; }
 
-	public bool mcpSet = false;
+    public bool mcpSet = false;
 
-	static DotNetObjectReference<Home>? dotNetRef;
+    static DotNetObjectReference<Home>? dotNetRef;
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>("/api/location/1/style");
+            bounds = await Http.GetFromJsonAsync<GeoBounds>("/api/geo/bounds/1");
+            parent.setLoaded(true);
 
-	protected override async Task OnInitializedAsync()
-	{
+            dotNetRef = DotNetObjectReference.Create(this);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initialized: {ex.Message}");
+        }
+    }
 
-		try
-		{
-			// await GetMainArea(false); // Moved to OnAfterRenderAsync
-			locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>("/api/location/1/style");
-			bounds = await Http.GetFromJsonAsync<GeoBounds>("/api/geo/bounds/1");
-			//locationStyles = new LocationStyle[0];
-			//bounds = new GeoBounds { _southWest = new GeoPoint(0,0), _northEast = new GeoPoint(1,1) };
-			parent.setLoaded(true);
+    [JSInvokable]
+    public async Task GetMainArea(bool redraw)
+    {
+        var dimension = await Service.GetDimensions();
 
+        Height = dimension.Height;
+        //Subtract Sidebar (260px) and Header (64px) for math
+        MainHeight = Height - 64;
 
-			dotNetRef = DotNetObjectReference.Create(this);
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"Error initialized: {ex.Message}");
-			// parent.setLoaded(true); // Optionally force loaded to see UI
-		}
-	}
+        //Width = dimension.Width - 170;
+        Width = dimension.Width - 260;
 
+        WSVGPad = Width / 2 - 50;
+        HSVGPad = Height / 2 - 50;
+        if (redraw)
+        {
+            StateHasChanged();
+        }
+    }
 
-	[JSInvokable]
-	public async Task GetMainArea(bool redraw)
-	{
+    public async Task LocationUpdated(int id)
+    {
+        parent.loaded = false;
+        await Task.Run(async () =>
+        {
+            await GetMainArea(false);
+            locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>($"api/location/{id}/style");
+            bounds = await Http.GetFromJsonAsync<GeoBounds>($"api/geo/bounds/{id}");
 
-		var dimension = await Service.GetDimensions();
+            Console.WriteLine(bounds);
 
-		//await Service.ConsoleLog($"Dimensions: {dimension.Width}x{dimension.Height}");
-		Height = dimension.Height;
-		//Subtract Sidebar (260px) and Header (64px) for math
-		//MainHeight = Height - 20;
-		MainHeight = Height - 64;
+            parent.loaded = true;
+            TileMath.BestMapView(bounds?.ToDoubleArray(), Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
 
-		//Width = dimension.Width - 170;
-		Width = dimension.Width - 260;
+            await Service.FlyTo(cntrLong, cntrLat, ((int)Math.Floor(zoom)) - 1);
 
-		WSVGPad = Width / 2 - 50;
-		HSVGPad = Height / 2 - 50;
-		if (redraw)
-		{
-			StateHasChanged();
-		}
-	}
+            await Service.UpdateStyles(locationStyles ?? new LocationStyle[0]);
+            await Service.AddColumnChartPoint(zoom);
+        });
+    }
 
-	public async Task LocationUpdated(int id)
-	{
-		parent.loaded = false;
-		await Task.Run(async () =>
-		{
-			await GetMainArea(false);
-			locationStyles = await Http.GetFromJsonAsync<LocationStyle[]>($"api/location/{id}/style");
-			bounds = await Http.GetFromJsonAsync<GeoBounds>($"api/geo/bounds/{id}");
+    [JSInvokable]
+    public async Task<object> GetStatsHierarchy()
+    {
+        Console.WriteLine("Fetching stats hierarchy...");
+        try
+        {
+            return await Http.GetFromJsonAsync<object>("/api/stats/hierarchy");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching stats: {ex.Message}");
+            return null;
+        }
+    }
 
-			Console.WriteLine(bounds);
-
-			parent.loaded = true;
-			TileMath.BestMapView(bounds?.ToDoubleArray(), Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
-
-			//var dotNetReference = DotNetObjectReference.Create(this);
-
-			await Service.FlyTo(cntrLong, cntrLat, ((int)Math.Floor(zoom)) - 1);
-
-			await Service.UpdateStyles(locationStyles ?? new LocationStyle[0]);
-			await Service.AddColumnChartPoint(zoom);
-
-			//var tp = locationStyles[0];
-			//await Service.AddColumnChartPoint(zoom);
-		});
-	}
-
-	protected override async Task OnAfterRenderAsync(bool firstRender)
-	{
-
-		try
-		{
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
             if (firstRender) Console.WriteLine($"[BBD] OnAfterRenderAsync: FirstRender = {firstRender}");
-			if (firstRender)
-			{
-				await GetMainArea(false);
-				StateHasChanged();
-			}
-			if (!mcpSet && parent.loaded && bounds != null)
-			{
-				mcpSet = true;
+            if (firstRender)
+            {
+                await GetMainArea(false);
+                StateHasChanged();
+            }
+            if (!mcpSet && parent.loaded && bounds != null)
+            {
+                mcpSet = true;
 
-				if (Width > 0 && MainHeight > 0)
-				{
-					Console.WriteLine($"[BBD] Initializing Map with W:{Width} H:{MainHeight} Zoom:{zoom}");
-					TileMath.BestMapView(bounds.ToDoubleArray(), Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
-					await Service.SetMapState(locationStyles ?? new LocationStyle[0], dotNetRef);
-					await Service.InitDeckGL(cntrLong, cntrLat, ((int)Math.Floor(zoom)) - 1);
-					await Service.AddColumnChartPoint(zoom);
-				}
-				else
-				{
-					Console.WriteLine($"[BBD] OnAfterRenderAsync: Skipping Map Init - W:{Width} H:{MainHeight} Loaded:{parent.loaded} Bounds:{bounds != null} McpSet:{mcpSet}");
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"Home.razor: Error in OnAfterRenderAsync: {ex}");
-		}
-		await base.OnAfterRenderAsync(firstRender);
-	}
+                if (Width > 0 && MainHeight > 0)
+                {
+                    Console.WriteLine($"[BBD] Initializing Map with W:{Width} H:{MainHeight} Zoom:{zoom}");
+                    
+                    var boundsArray = bounds.ToDoubleArray();
+                    TileMath.BestMapView(boundsArray, Width, MainHeight, 0, 256, out cntrLat, out cntrLong, out zoom);
+                    
+                    await Service.SetMapState(locationStyles ?? new LocationStyle[0], dotNetRef);
+                    await Service.InitDeckGL(cntrLong, cntrLat, ((int)Math.Floor(zoom)) - 1);
+                    await Service.AddColumnChartPoint(zoom);
+                }
+                else
+                {
+                    Console.WriteLine($"[BBD] OnAfterRenderAsync: Skipping Map Init - W:{Width} H:{MainHeight} Loaded:{parent.loaded} Bounds:{bounds != null} McpSet:{mcpSet}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Home.razor: Error in OnAfterRenderAsync: {ex}");
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 
-	public List<GeoPoint> GetLocation(LocationStyle style)
-	{
-		return new List<GeoPoint> {
-style.Location
-};
-	}
+    public List<GeoPoint> GetLocation(LocationStyle style)
+    {
+        return new List<GeoPoint> {
+            style.Location
+        };
+    }
 
-	[JSInvokable("GetBrewersByVenue")]
-	public async Task<BrewerResult[]> GetBrewersByVenue(int venue, string style)
-	{
-
-		BrewerResult[]? results = await
-		Http.GetFromJsonAsync<BrewerResult[]>($"api/location/{venue}/{HttpUtility.UrlEncode(style)}/brewers");
-		return results ?? new BrewerResult[0];
-
-
-
-		//var mock = await mockRepo.GetMockedBrewerResults();
-		//return mock;
-	}
-
-	[JSInvokable("SetState")]
-	public async Task<bool> SetState(DataState state)
-	{
-		return await Task.Run<bool>(() =>
-		{
-			Service.state = state;
-			return true;
-		});
-	}
+    [JSInvokable("GetBrewersByVenue")]
+    public async Task<BrewerResult[]> GetBrewersByVenue(int venue, string style)
+    {
+        BrewerResult[]? results = await Http.GetFromJsonAsync<BrewerResult[]>($"api/location/{venue}/{HttpUtility.UrlEncode(style)}/brewers");
+        return results ?? new BrewerResult[0];
+    }
 
 
-	public List<PieSegment> GetGraphData(LocationStyle style)
-	{
-		return style.Styles.Select(a => new PieSegment { x = a.Name, y = a.Count }).ToList();
-	}
+    [JSInvokable("SetState")]
+    public async Task<bool> SetState(DataState state)
+    {
+        return await Task.Run<bool>(() =>
+        {
+            Service.state = state;
+            return true;
+        });
+    }
 
-	public class PieSegment
-	{
-		public string? x;
-		public double y;
-	}
+    [JSInvokable("GetEstablishmentData")]
+    public Task<LocationStyle[]> GetEstablishmentData()
+    {
+        return Task.FromResult(locationStyles ?? new LocationStyle[0]);
+    }
+
+    public List<PieSegment> GetGraphData(LocationStyle style)
+    {
+        return style.Styles.Select(a => new PieSegment { x = a.Name, y = a.Count }).ToList();
+    }
+
+    public class PieSegment
+    {
+        public string? x;
+        public double y;
+    }
 }

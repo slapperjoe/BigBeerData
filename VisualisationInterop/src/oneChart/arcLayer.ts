@@ -1,5 +1,5 @@
-import type { Color } from "@deck.gl/core/typed";
-import { ArcLayer } from "@deck.gl/layers/typed";
+import type { Color } from "@deck.gl/core";
+import { ArcLayer } from "@deck.gl/layers";
 import type { ColumnDatum } from "./columnChart";
 
 /**
@@ -21,18 +21,23 @@ export function createArcLayer(selected: ColumnDatum, data: any[], ctx: ArcConte
 		data,
 		pickable: true,
 		getWidth: 4,
-		getSourcePosition: () => [selected.centroid[0], selected.centroid[1]],
+		// Use totalHeight (index 2 + height) or default to centroid height if missing.
+		getSourcePosition: () => [selected.centroid[0], selected.centroid[1], (selected.totalHeight || selected.centroid[2])],
 		getTargetPosition: (d: any) => [d.location.x, d.location.y],
 		getSourceColor: (): Color => (selected.colour as Color) ?? ([255, 214, 0] as Color),
 		getTargetColor: (): Color => (selected.colour as Color) ?? ([255, 214, 0] as Color),
 		onClick: (info) => {
 			if (!info.object) return;
-			let locs: [number, number] = [info.object.location.x, info.object.location.y];
-			if (ctx.viewingVenue && info.layer) {
-				const source = (info.layer.props as any)["getSourcePosition"] as [number, number];
-				locs = [source[0], source[1]];
+			// Toggle logic: If we are at the venue (viewingVenue=true), fly to the brewer (object.location).
+			// If we are at the brewer (viewingVenue=false), fly back to the venue (selected.centroid).
+
+			if (ctx.viewingVenue) {
+				// Fly to Brewer
+				ctx.flyTo(Number(info.object.location.x), Number(info.object.location.y), Number(ctx.currentZoom));
+			} else {
+				// Fly to Venue
+				ctx.flyTo(Number(selected.centroid[0]), Number(selected.centroid[1]), Number(ctx.currentZoom));
 			}
-			ctx.flyTo(locs[0], locs[1], ctx.currentZoom);
 			ctx.toggleViewing(!ctx.viewingVenue);
 		},
 	});

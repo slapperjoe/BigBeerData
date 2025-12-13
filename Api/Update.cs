@@ -38,7 +38,7 @@ namespace Api
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/event-stream");
+            response.Headers.Add("Content-Type", "text/plain; charset=utf-8"); // Changed from text/event-stream for browser visibility
             response.Headers.Add("Cache-Control", "no-cache");
 
             try
@@ -61,26 +61,30 @@ namespace Api
             _logger.LogInformation($"Weekly Update Timer executed at: {DateTime.Now}");
             if (myTimer.IsPastDue) _logger.LogInformation("Timer is running late!");
 
-            await RunUpdateCore(async (msg) => _logger.LogInformation(msg), context.CancellationToken);
+            // Timer runs with full limit (250) or config based. Let's stick to 250.
+            var requestMonitor = new RequestMonitor(250);
+            await RunUpdateCore(async (msg) => _logger.LogInformation(msg), requestMonitor, context.CancellationToken);
         }
 
         public async Task RunUpdate(Stream stream, CancellationToken cancellationToken)
         {
             using var writeStream = new StreamWriter(stream, leaveOpen: true) { AutoFlush = true };
-            await writeStream.WriteLineAsync("data: Starting Data Scrape.");
+            await writeStream.WriteLineAsync("Starting Data Scrape (Total Limit 250)...");
             await writeStream.FlushAsync();
+
+            var requestMonitor = new RequestMonitor(250);
 
             await RunUpdateCore(async (msg) =>
             {
-                await writeStream.WriteLineAsync($"data: {msg}");
+                await writeStream.WriteLineAsync($"{msg}");
                 await writeStream.FlushAsync();
-            }, cancellationToken);
+            }, requestMonitor, cancellationToken);
 
-            await writeStream.WriteLineAsync("data: Update complete.");
+            await writeStream.WriteLineAsync("Update complete.");
             await writeStream.FlushAsync();
         }
 
-        private async Task RunUpdateCore(Func<string, Task> logAction, CancellationToken cancellationToken)
+        private async Task RunUpdateCore(Func<string, Task> logAction, RequestMonitor monitor, CancellationToken cancellationToken)
         {
             var optionsBuilder = new DbContextOptionsBuilder<BigBeerContext>();
             optionsBuilder.UseSqlServer(_connectionString);
@@ -93,11 +97,11 @@ namespace Api
             foreach (var establishment in establishments)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await HandleEstablishment(establishment, dbContext, client, logAction, cancellationToken);
+                await HandleEstablishment(establishment, dbContext, client, logAction, monitor, cancellationToken);
             }
         }
 
-        private async Task HandleEstablishment(Establishment establishment, BigBeerContext dbContext, HttpClient client, Func<string, Task> logAction, CancellationToken cancellationToken)
+        private async Task HandleEstablishment(Establishment establishment, BigBeerContext dbContext, HttpClient client, Func<string, Task> logAction, RequestMonitor monitor, CancellationToken cancellationToken)
         {
             var counter = 0;
             var alreadyAddedToDatabase = false;
@@ -112,7 +116,7 @@ namespace Api
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 await logAction($"Looking for new beers in {establishment.EstablishmentName}");
-                checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
+                checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction, monitor);
             }
             else
             {
@@ -128,7 +132,7 @@ namespace Api
                 {
                     await logAction($"Looking for less new beers in {establishment.EstablishmentName}");
 
-                    checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
+                    checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction, monitor);
                     counter++;
                     alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, logAction, cancellationToken);
                 }
@@ -136,14 +140,14 @@ namespace Api
 
             if (counter < MAX_REQUESTS && !newGet && !establishment.MaxedCheckinHistory)
             {
-                checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
+                checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction, monitor);
                 counter++;
                 alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, logAction, cancellationToken);
 
                 while (checkins.Count > 0 && !alreadyAddedToDatabase && counter < MAX_REQUESTS)
                 {
                     await logAction($"Looking for old beers in {establishment.EstablishmentName}");
-                    checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction);
+                    checkins = await CheckinsGet(establishment.EstablishmentId, client, logAction, monitor);
                     counter++;
                     alreadyAddedToDatabase = await ProcessCheckins(checkins, alreadyAddedToDatabase, dbContext, logAction, cancellationToken);
                 }
@@ -208,8 +212,11 @@ namespace Api
             return alreadyAdded;
         }
 
-        public async Task<List<Checkin>> CheckinsGet(int id, HttpClient client, Func<string, Task> logAction, int? max_id = null)
+        public async Task<List<Checkin>> CheckinsGet(int id, HttpClient client, Func<string, Task> logAction, RequestMonitor monitor, int? max_id = null)
         {
+            // Check request limit before call
+            monitor.IncrementAndCheck();
+
             var requestString = "venue/checkins/" + id + "?client_id=" + client_id +
                             "&client_secret=" + client_secret;
             if (max_id.HasValue)
@@ -218,6 +225,11 @@ namespace Api
             }
 
             var venueResult = await client.GetAsync(requestString);
+
+            if (venueResult.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                throw new Exception("Rate Limit Exceeded (429). Halting Update.");
+            }
 
             var venueData = await venueResult.Content.ReadAsStringAsync();
 
@@ -233,6 +245,10 @@ namespace Api
             }
 
             var checkinItems = (IEnumerable<dynamic>)payload.response.checkins.items;
+            if (checkinItems == null)
+            {
+                return new List<Checkin>();
+            }
 
             var checkinSet = checkinItems.Select(item => new Checkin
             {
@@ -277,6 +293,26 @@ namespace Api
                 URL = b.contact.url
             };
             return brewer;
+        }
+    }
+
+    public class RequestMonitor
+    {
+        private int _count = 0;
+        private readonly int _limit;
+
+        public RequestMonitor(int limit)
+        {
+            _limit = limit;
+        }
+
+        public void IncrementAndCheck()
+        {
+            _count++;
+            if (_count > _limit)
+            {
+                throw new Exception($"Total Request Limit ({_limit}) Exceeded. Halting.");
+            }
         }
     }
 }

@@ -1,12 +1,16 @@
-import { SimpleMeshLayer } from "@deck.gl/mesh-layers/typed";
-import { CylinderGeometry, Texture2D, readPixelsToArray } from "@luma.gl/core";
+import { SimpleMeshLayer } from "@deck.gl/mesh-layers";
+import { CylinderGeometry } from "@luma.gl/engine";
+import { Texture } from "@luma.gl/core";
+import { WebGLDevice } from "@luma.gl/webgl";
 
 /**
  * Aggregated counts per brewer for pie construction.
  */
 export interface BrewerBrewed {
+	name: string;
 	count: number;
 	color?: number[];
+	beers?: string[];
 }
 
 /**
@@ -25,7 +29,7 @@ export function createPieChartLayers(brewerMap: BrewerMapItem[], glContext: WebG
 	return brewerMap.map((item) => new SimpleMeshLayer({
 		id: `piechart-layer-${item.name}`,
 		data: [item],
-		texture: new Promise((resolve) => {
+		texture: (() => {
 			const dataArray: number[][] = [];
 			item.beersBrewed.forEach((bb, i) => {
 				for (let j = 0; j < bb.count; j++) {
@@ -34,23 +38,21 @@ export function createPieChartLayers(brewerMap: BrewerMapItem[], glContext: WebG
 				}
 			});
 			const width = item.beersBrewed.flatMap((a) => a.count).reduce((a, b) => a + b, 0);
-			const texture = new Texture2D(glContext, {
+			// @ts-ignore
+			const device = new WebGLDevice({ gl: glContext });
+			return device.createTexture({
 				width,
 				height: 1,
-				format: glContext.RGB,
+				format: 'rgb8unorm' as any, // glContext.RGB usually maps to this or similar, explicit format is safer in v9
 				data: new Uint8Array(dataArray.flat()),
-				parameters: {
-					[glContext.TEXTURE_MAG_FILTER]: glContext.NEAREST,
-					[glContext.TEXTURE_MIN_FILTER]: glContext.NEAREST,
+				sampler: {
+					minFilter: 'nearest',
+					magFilter: 'nearest',
 				},
-				pixelStore: {
-					[glContext.UNPACK_FLIP_Y_WEBGL]: true,
-				},
-				mipmaps: true,
 			});
-			resolve(texture);
-		}),
+		})(),
 		onClick: (pI) => {
+			/*
 			const image = (pI.layer?.props as any)?.["image"];
 			if (pI.coordinate && image) {
 				const pixelColor = readPixelsToArray(image, {
@@ -61,9 +63,11 @@ export function createPieChartLayers(brewerMap: BrewerMapItem[], glContext: WebG
 				});
 				console.log("Color at picked pixel:", pixelColor);
 			}
+			*/
 		},
 		autoHighlight: true,
 		pickable: true,
+		// @ts-ignore
 		mesh: new CylinderGeometry({ radius: 5, height: 1, topCap: true, nradial: 48, bottomCap: false }),
 		sizeScale: 16,
 		_useMeshColors: true,

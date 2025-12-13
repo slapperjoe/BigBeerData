@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <AnalysisLevel>latest</AnalysisLevel>
 	 <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+     <WorkerSdkTargetFramework>net10.0</WorkerSdkTargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
