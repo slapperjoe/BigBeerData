@@ -17,7 +17,7 @@ var host = new HostBuilder()
 	.ConfigureFunctionsWorkerDefaults()
 	.ConfigureServices(services =>
 	{
-		services.AddDbContext<BigBeerContext>(opt => opt.UseSqlServer(config["DBConnection"]));
+		services.AddDbContext<BigBeerContext>(opt => opt.UseSqlServer(config.GetConnectionString("bigbeerdb") ?? config["DBConnection"]));
 
 		services.AddHttpClient("BeerBot", clientConfig =>
 		{
@@ -66,5 +66,11 @@ var host = new HostBuilder()
 				}));
 	})
 	.Build();
+
+//using (var scope = host.Services.CreateScope())
+//{
+//    var db = scope.ServiceProvider.GetRequiredService<BigBeerContext>();
+//    await db.Database.MigrateAsync();
+//}
 
 await host.RunAsync();

@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WebApp.Client\WebApp.Client.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />
+    <ProjectReference Include="..\BigBeerData.ServiceDefaults\BigBeerData.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

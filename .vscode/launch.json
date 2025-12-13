@@ -2,6 +2,29 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Start AppHost",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "BigBeerData.AppHost/BigBeerData.AppHost.csproj"
+      ],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build Everything",
+      "env": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:18888"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Login to the dashboard at (http://\\S+)"
+      },
+      "dotnetRunMessages": true,
+      "justMyCode": true
+    },
+    {
       "name": "Launch WebApp",
       "type": "coreclr",
       "request": "launch",

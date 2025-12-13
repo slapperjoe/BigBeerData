@@ -2,6 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Start AppHost",
+      "type": "shell",
+      "command": "dotnet run --project BigBeerData.AppHost/BigBeerData.AppHost.csproj",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      }
+    },
+    {
       "label": "Start Database",
       "type": "shell",
       "command": "docker compose up -d",
